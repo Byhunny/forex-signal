@@ -1,0 +1,27 @@
+{
+  "best_val_loss": 4.7053817494694766e-05,
+  "test_loss": 7.321380471694283e-05,
+  "test_directional_accuracy": 0.5080154781647319,
+  "epochs_run": 3,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.005631883317646362,
+      "val_loss": 0.00022053347105005134,
+      "secs": 1.8503141403198242
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.0008592774870861044,
+      "val_loss": 8.512328592284273e-05,
+      "secs": 1.7822208404541016
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.0004259031252942479,
+      "val_loss": 4.7053817494694766e-05,
+      "secs": 1.785409688949585
+    }
+  ],
+  "model_path": "/mnt/c/Users/usnat/projects/forex-signal/models/lnn_eurusd_m5.pt"
+}
