@@ -1,0 +1,57 @@
+symbol: EURUSD
+timeframe: M5
+
+data:
+  seq_len: 60
+  pred_horizon: 5
+  train_years: 3
+  yfinance_symbol: "EURUSD=X"
+
+features:
+  - returns
+  - log_returns
+  - high_low_range
+  - close_open_range
+  - rsi_14
+  - atr_14
+  - bb_position
+  - macd_diff
+  - ema_fast_slow_ratio
+  - volume_zscore
+  - hour_sin
+  - hour_cos
+
+model:
+  type: cfc
+  units: 48
+  dropout: 0.1
+
+train:
+  batch_size: 128
+  epochs: 40
+  lr: 0.001
+  weight_decay: 1.0e-5
+  early_stopping_patience: 6
+  val_fraction: 0.15
+  test_fraction: 0.15
+
+signal:
+  min_predicted_return_bps: 1.5     # absolute predicted cumulative return (basis points) to consider a trade
+  min_directional_consistency: 0.6  # fraction of predicted steps in same direction
+  cooldown_bars: 3                   # wait N bars after exit before re-entering
+
+risk:
+  lot_size: 0.01
+  leverage: 400
+  max_concurrent_positions: 2
+  max_daily_loss_pct: 2.0
+  sl_atr_multiplier: 1.5
+  tp_atr_min_multiplier: 1.0
+  tp_atr_max_multiplier: 4.0
+  spread_pips_estimate: 0.8
+
+backtest:
+  start: "2022-01-01"
+  end: "2026-01-01"
+  commission_per_lot: 7.0
+  slippage_pips: 0.3

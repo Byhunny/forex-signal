@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pt
+*.pkl
+.env
+.venv/
+venv/
+data_cache/*.csv
+data_cache/*.parquet
+logs/*.log
+.pytest_cache/
+.DS_Store
+*.egg-info/
+build/
+dist/
