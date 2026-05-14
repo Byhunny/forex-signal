@@ -110,10 +110,12 @@ def compute_features(df: pd.DataFrame) -> pd.DataFrame:
 @dataclass
 class WindowedDataset:
     X: np.ndarray  # (samples, seq_len, n_features)
-    y: np.ndarray  # (samples, pred_horizon)
+    y: np.ndarray  # (samples, pred_horizon) — z-score normalized targets
     times: np.ndarray  # (samples,) the timestamp of the last bar in each window
     feature_means: np.ndarray
     feature_stds: np.ndarray
+    target_mean: float = 0.0  # so predictions can be denormalized back to raw log returns
+    target_std: float = 1.0
 
 
 def build_windows(
@@ -164,4 +166,15 @@ def build_windows(
         y[i] = np.log(future / prev).astype(np.float32)
         t_out[i] = times[end - 1]
 
-    return WindowedDataset(X=X, y=y, times=t_out, feature_means=means, feature_stds=stds)
+    # Normalize targets using training slice stats — gives MSE meaningful gradient
+    # (raw log returns are ~1e-4, MSE on those is ~1e-8 and rewards "predict zero")
+    train_y = y[: int(n_samples * 0.7)]
+    target_mean = float(train_y.mean())
+    target_std = float(train_y.std()) or 1.0
+    y_norm = ((y - target_mean) / target_std).astype(np.float32)
+
+    return WindowedDataset(
+        X=X, y=y_norm, times=t_out,
+        feature_means=means, feature_stds=stds,
+        target_mean=target_mean, target_std=target_std,
+    )

@@ -15,6 +15,7 @@ from forex_signal.data.mt5_client import is_mt5_available, make_client
 from forex_signal.data.yfinance_loader import load_eurusd
 from forex_signal.model.predict import Predictor
 from forex_signal.model.train import TrainConfig, train
+from forex_signal.strategy.entry_engine import EntryConfig
 
 log = logging.getLogger("forex_signal")
 
@@ -93,6 +94,17 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         return 2
     df = pd.read_parquet(in_path)
     predictor = Predictor.load(args.model or DEFAULT_MODEL_PATH, seq_len=seq_len)
+    entry_cfg = EntryConfig(
+        require_session_filter=bool(cfg.get("entry", "require_session_filter", default=True)),
+        require_htf_bias=bool(cfg.get("entry", "require_htf_bias", default=True)),
+        require_sweep=bool(cfg.get("entry", "require_sweep", default=True)),
+        require_pullback=bool(cfg.get("entry", "require_pullback", default=True)),
+        require_bos_or_choch=bool(cfg.get("entry", "require_bos_or_choch", default=False)),
+        min_lnn_probability=float(cfg.get("entry", "min_lnn_probability", default=0.55)),
+        sweep_recent_window=int(cfg.get("entry", "sweep_recent_window", default=3)),
+        pullback_window=int(cfg.get("entry", "pullback_window", default=4)),
+        invert_direction=bool(cfg.get("entry", "invert_direction", default=False)),
+    )
     bc = BacktestConfig(
         seq_len=seq_len,
         lot_size=float(cfg.get("risk", "lot_size", default=0.01)),
@@ -101,12 +113,11 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         slippage_pips=float(cfg.get("backtest", "slippage_pips", default=0.3)),
         commission_per_lot=float(cfg.get("backtest", "commission_per_lot", default=7.0)),
         sl_atr_multiplier=float(cfg.get("risk", "sl_atr_multiplier", default=1.5)),
-        tp_atr_min_multiplier=float(cfg.get("risk", "tp_atr_min_multiplier", default=1.0)),
-        tp_atr_max_multiplier=float(cfg.get("risk", "tp_atr_max_multiplier", default=4.0)),
-        min_predicted_return_bps=float(cfg.get("signal", "min_predicted_return_bps", default=1.5)),
-        min_directional_consistency=float(cfg.get("signal", "min_directional_consistency", default=0.6)),
+        tp_atr_min_multiplier=float(cfg.get("risk", "tp_atr_min_multiplier", default=0.6)),
+        tp_atr_max_multiplier=float(cfg.get("risk", "tp_atr_max_multiplier", default=1.5)),
         max_concurrent_positions=int(cfg.get("risk", "max_concurrent_positions", default=2)),
         cooldown_bars=int(cfg.get("signal", "cooldown_bars", default=3)),
+        entry=entry_cfg,
     )
     result = run_backtest(df, predictor, bc)
     out = PROJECT_ROOT / "logs" / f"backtest_{pd.Timestamp.utcnow().strftime('%Y%m%d_%H%M%S')}.json"

@@ -1,4 +1,4 @@
-"""Bar-by-bar walk-forward backtest with realistic spread/slippage."""
+"""Walk-forward backtest with SMC entry permission engine + LNN confirmation."""
 from __future__ import annotations
 
 import json
@@ -12,12 +12,12 @@ import torch
 
 from forex_signal.data.features import compute_features
 from forex_signal.model.predict import Predictor
+from forex_signal.strategy.entry_engine import EntryConfig, compute_all_signals, evaluate_entry
 from forex_signal.strategy.risk import compute_trade_plan
-from forex_signal.strategy.signal import generate_signal
 
 log = logging.getLogger(__name__)
 
-PIP_EURUSD = 0.0001  # for EURUSD-style 5-digit pairs
+PIP_EURUSD = 0.0001
 
 
 @dataclass
@@ -30,14 +30,13 @@ class BacktestConfig:
     slippage_pips: float = 0.3
     commission_per_lot: float = 7.0
     sl_atr_multiplier: float = 1.5
-    tp_atr_min_multiplier: float = 1.0
-    tp_atr_max_multiplier: float = 4.0
-    min_predicted_return_bps: float = 1.5
-    min_directional_consistency: float = 0.6
+    tp_atr_min_multiplier: float = 0.6
+    tp_atr_max_multiplier: float = 1.5    # tighter cap for high-win-rate scalping
     max_concurrent_positions: int = 2
     cooldown_bars: int = 3
     pip_value: float = PIP_EURUSD
     contract_size: float = 100_000.0
+    entry: EntryConfig = field(default_factory=EntryConfig)
 
 
 @dataclass
@@ -51,6 +50,7 @@ class Trade:
     tp_price: float
     pnl: float
     reason: str  # "tp" | "sl" | "reverse" | "eod"
+    lnn_prob: float = 0.0
 
 
 @dataclass
@@ -62,12 +62,10 @@ class BacktestResult:
     sharpe: float
     max_drawdown_pct: float
     final_equity: float
+    trades_per_day: float
+    days_covered: float
     trades: list[Trade] = field(default_factory=list)
     equity_curve: list[float] = field(default_factory=list)
-
-
-def _pnl_per_pip(lot: float, contract_size: float, pip: float) -> float:
-    return lot * contract_size * pip
 
 
 def run_backtest(
@@ -79,6 +77,9 @@ def run_backtest(
     if len(features) <= config.seq_len + predictor.pred_horizon + 1:
         raise ValueError("not enough bars after warmup for backtest")
 
+    # Compute SMC layers once on the post-feature DataFrame
+    smc = compute_all_signals(features, config.entry)
+
     f_arr = features[predictor.feature_columns].to_numpy(dtype=np.float32)
     f_norm = (f_arr - predictor.feature_means) / predictor.feature_stds
     close = features["close"].to_numpy(dtype=np.float64)
@@ -88,7 +89,6 @@ def run_backtest(
     times = pd.to_datetime(features["time"]).astype(str).to_numpy()
 
     n = len(features)
-
     equity = config.initial_balance
     open_positions: list[dict] = []
     closed_trades: list[Trade] = []
@@ -107,9 +107,8 @@ def run_backtest(
     for i in range(config.seq_len, n - 1):
         bar_high = high[i]
         bar_low = low[i]
-        bar_close = close[i]
 
-        # Check open positions for SL/TP hit on this bar
+        # Manage open positions: SL/TP check on this bar
         still_open = []
         for pos in open_positions:
             hit_tp = bar_high >= pos["tp"] if pos["dir"] == 1 else bar_low <= pos["tp"]
@@ -117,7 +116,7 @@ def run_backtest(
             exit_price = None
             reason = None
             if hit_tp and hit_sl:
-                # Ambiguous — assume SL hits first (worst case for trader)
+                # SL hit first (conservative)
                 exit_price = pos["sl"]
                 reason = "sl"
             elif hit_tp:
@@ -141,46 +140,44 @@ def run_backtest(
                         tp_price=pos["tp"],
                         pnl=pnl,
                         reason=reason,
+                        lnn_prob=pos.get("lnn_prob", 0.0),
                     )
                 )
                 cooldown_until = i + config.cooldown_bars
             else:
                 still_open.append(pos)
         open_positions = still_open
-
         equity_curve.append(equity)
 
-        # Inference for this bar — predict from window ending at i (inclusive)
-        if i < config.seq_len:
-            continue
         if i <= cooldown_until:
             continue
         if len(open_positions) >= config.max_concurrent_positions:
             continue
-
-        window = f_norm[i - config.seq_len + 1 : i + 1]
-        x = torch.from_numpy(window[None, :, :]).to(device)
-        with torch.no_grad():
-            pred = model(x).cpu().numpy()[0]
-
-        sig = generate_signal(
-            pred,
-            min_predicted_return_bps=config.min_predicted_return_bps,
-            min_directional_consistency=config.min_directional_consistency,
-        )
-        if sig.direction == 0:
-            continue
         if atr[i] <= 0 or not np.isfinite(atr[i]):
             continue
 
-        # Open at next bar's "open + spread + slippage adversely"
-        next_open = close[i]  # approximate: take current close as next open
-        entry = next_open + (spread_price + slippage_price) * sig.direction
+        # Run LNN to get direction probability
+        window = f_norm[i - config.seq_len + 1 : i + 1]
+        x = torch.from_numpy(window[None, :, :]).to(device)
+        with torch.no_grad():
+            ret_norm, dir_logit = model(x)
+        prob = float(torch.sigmoid(dir_logit).cpu().item())
+        pred_ret = ret_norm.cpu().numpy()[0] * predictor.target_std + predictor.target_mean
+        cum_return = float(pred_ret.sum())
+
+        # Evaluate entry permission
+        decision = evaluate_entry(smc.iloc[i], prob, config.entry)
+        if decision.direction == 0:
+            continue
+
+        # Build trade plan
+        next_open = close[i]
+        entry_price = next_open + (spread_price + slippage_price) * decision.direction
         plan = compute_trade_plan(
-            direction=sig.direction,
-            price=entry,
+            direction=decision.direction,
+            price=entry_price,
             atr=atr[i],
-            predicted_cum_return=sig.cum_return,
+            predicted_cum_return=cum_return,
             lot_size=config.lot_size,
             sl_atr_multiplier=config.sl_atr_multiplier,
             tp_atr_min_multiplier=config.tp_atr_min_multiplier,
@@ -188,11 +185,12 @@ def run_backtest(
         )
         open_positions.append(
             {
-                "entry": entry,
+                "entry": entry_price,
                 "entry_time": times[i],
-                "dir": sig.direction,
+                "dir": decision.direction,
                 "sl": plan.sl_price,
                 "tp": plan.tp_price,
+                "lnn_prob": prob,
             }
         )
 
@@ -214,17 +212,23 @@ def run_backtest(
                 tp_price=pos["tp"],
                 pnl=pnl,
                 reason="eod",
+                lnn_prob=pos.get("lnn_prob", 0.0),
             )
         )
     equity_curve.append(equity)
 
-    return _build_result(closed_trades, equity_curve, config.initial_balance)
+    # Compute days covered for trades-per-day
+    t0 = pd.to_datetime(features["time"].iloc[config.seq_len])
+    t1 = pd.to_datetime(features["time"].iloc[-1])
+    days = max((t1 - t0).total_seconds() / 86400.0, 1.0)
+
+    return _build_result(closed_trades, equity_curve, config.initial_balance, days)
 
 
-def _build_result(trades: list[Trade], equity_curve: list[float], initial: float) -> BacktestResult:
+def _build_result(trades: list[Trade], equity_curve: list[float], initial: float, days: float) -> BacktestResult:
     n = len(trades)
     if n == 0:
-        return BacktestResult(0, 0.0, 0.0, 0.0, 0.0, 0.0, initial, [], equity_curve)
+        return BacktestResult(0, 0.0, 0.0, 0.0, 0.0, 0.0, initial, 0.0, days, [], equity_curve)
     pnls = np.array([t.pnl for t in trades])
     wins = pnls[pnls > 0]
     losses = pnls[pnls <= 0]
@@ -247,6 +251,8 @@ def _build_result(trades: list[Trade], equity_curve: list[float], initial: float
         sharpe=sharpe,
         max_drawdown_pct=max_dd_pct,
         final_equity=float(eq[-1]),
+        trades_per_day=n / days,
+        days_covered=days,
         trades=trades,
         equity_curve=equity_curve,
     )

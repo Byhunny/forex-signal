@@ -1,4 +1,4 @@
-"""Training pipeline for the LNN."""
+"""Multi-task training: regression on normalized returns + BCE on cumulative direction."""
 from __future__ import annotations
 
 import json
@@ -30,6 +30,7 @@ class TrainConfig:
     test_fraction: float = 0.15
     device: str = "cpu"
     seed: int = 42
+    direction_loss_weight: float = 1.0  # weight on BCE relative to MSE
 
 
 @dataclass
@@ -37,6 +38,9 @@ class TrainResult:
     best_val_loss: float
     test_loss: float
     test_directional_accuracy: float
+    test_classifier_accuracy: float
+    test_classifier_p70_acc: float    # accuracy on samples where |p-0.5| >= 0.2 (confident)
+    test_classifier_p70_count: int
     epochs_run: int
     history: list[dict]
     model_path: str
@@ -93,7 +97,16 @@ def train(
     device = torch.device(config.device)
     model = ForexLNN(n_features, units=config.units, pred_horizon=pred_horizon, dropout=config.dropout).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
-    loss_fn = torch.nn.MSELoss()
+    mse_fn = torch.nn.MSELoss()
+    bce_fn = torch.nn.BCEWithLogitsLoss()
+
+    def combined_loss(returns_pred, dir_logit, y_target):
+        mse = mse_fn(returns_pred, y_target)
+        # Compute target direction from cumulative target return (in z-scored space, sign is preserved)
+        cum = y_target.sum(dim=1)
+        dir_target = (cum > 0).float()
+        bce = bce_fn(dir_logit, dir_target)
+        return mse + config.direction_loss_weight * bce, mse.item(), bce.item()
 
     best_val = float("inf")
     patience_left = config.early_stopping_patience
@@ -106,30 +119,43 @@ def train(
         epochs_run = epoch
         t0 = time.time()
         model.train()
-        train_losses = []
+        tr_total = []
+        tr_mse = []
+        tr_bce = []
         for xb, yb in train_loader:
             xb, yb = xb.to(device), yb.to(device)
             opt.zero_grad()
-            pred = model(xb)
-            loss = loss_fn(pred, yb)
+            r_pred, d_logit = model(xb)
+            loss, mse_v, bce_v = combined_loss(r_pred, d_logit, yb)
             loss.backward()
             opt.step()
-            train_losses.append(loss.item())
-        train_loss = float(np.mean(train_losses))
+            tr_total.append(loss.item())
+            tr_mse.append(mse_v)
+            tr_bce.append(bce_v)
 
         model.eval()
         with torch.no_grad():
             vl = []
             for xb, yb in val_loader:
                 xb, yb = xb.to(device), yb.to(device)
-                vl.append(loss_fn(model(xb), yb).item())
+                r_pred, d_logit = model(xb)
+                loss, _, _ = combined_loss(r_pred, d_logit, yb)
+                vl.append(loss.item())
         val_loss = float(np.mean(vl))
-
+        train_loss = float(np.mean(tr_total))
         elapsed = time.time() - t0
-        history.append({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss, "secs": elapsed})
-        log.info("epoch %d train=%.6f val=%.6f time=%.1fs", epoch, train_loss, val_loss, elapsed)
 
-        if val_loss < best_val - 1e-8:
+        history.append({
+            "epoch": epoch, "train_loss": train_loss, "val_loss": val_loss,
+            "train_mse": float(np.mean(tr_mse)), "train_bce": float(np.mean(tr_bce)),
+            "secs": elapsed,
+        })
+        log.info(
+            "epoch %d train=%.4f val=%.4f mse=%.4f bce=%.4f t=%.1fs",
+            epoch, train_loss, val_loss, np.mean(tr_mse), np.mean(tr_bce), elapsed,
+        )
+
+        if val_loss < best_val - 1e-6:
             best_val = val_loss
             patience_left = config.early_stopping_patience
             torch.save(
@@ -142,6 +168,8 @@ def train(
                     "feature_columns": FEATURE_COLUMNS,
                     "feature_means": dataset.feature_means.tolist(),
                     "feature_stds": dataset.feature_stds.tolist(),
+                    "target_mean": dataset.target_mean,
+                    "target_std": dataset.target_std,
                 },
                 save_path,
             )
@@ -156,35 +184,61 @@ def train(
     best_model = ForexLNN(n_features, units=config.units, pred_horizon=pred_horizon, dropout=0.0).to(device)
     best_model.load_state_dict(ckpt["model_state"])
     best_model.eval()
-    preds = []
-    targs = []
+
+    pred_returns_all = []
+    pred_probs_all = []
+    targets_all = []
     test_losses = []
     with torch.no_grad():
         for xb, yb in test_loader:
             xb_d, yb_d = xb.to(device), yb.to(device)
-            p = best_model(xb_d)
-            test_losses.append(loss_fn(p, yb_d).item())
-            preds.append(p.cpu().numpy())
-            targs.append(yb.numpy())
-    if preds:
-        preds_arr = np.concatenate(preds, axis=0)
-        targs_arr = np.concatenate(targs, axis=0)
+            r_pred, d_logit = best_model(xb_d)
+            loss, _, _ = combined_loss(r_pred, d_logit, yb_d)
+            test_losses.append(loss.item())
+            pred_returns_all.append(r_pred.cpu().numpy())
+            pred_probs_all.append(torch.sigmoid(d_logit).cpu().numpy())
+            targets_all.append(yb.numpy())
+
+    if pred_returns_all:
+        preds_ret = np.concatenate(pred_returns_all, axis=0)
+        preds_prob = np.concatenate(pred_probs_all, axis=0)
+        targs = np.concatenate(targets_all, axis=0)
         test_loss = float(np.mean(test_losses))
-        dir_acc = _directional_accuracy(preds_arr, targs_arr)
+
+        dir_acc = _directional_accuracy(preds_ret, targs)
+
+        # Classifier accuracy on all test samples
+        targ_dir_bin = (targs.sum(axis=1) > 0).astype(int)
+        pred_dir_bin = (preds_prob >= 0.5).astype(int)
+        cls_acc = float((pred_dir_bin == targ_dir_bin).mean())
+
+        # Confident-only accuracy (|prob - 0.5| >= 0.2 → confidence 70%+ in one class)
+        confident_mask = np.abs(preds_prob - 0.5) >= 0.2
+        if confident_mask.sum() > 0:
+            cls_p70_acc = float((pred_dir_bin[confident_mask] == targ_dir_bin[confident_mask]).mean())
+            cls_p70_n = int(confident_mask.sum())
+        else:
+            cls_p70_acc = 0.0
+            cls_p70_n = 0
     else:
         test_loss = float("nan")
-        dir_acc = float("nan")
+        dir_acc = 0.0
+        cls_acc = 0.0
+        cls_p70_acc = 0.0
+        cls_p70_n = 0
 
     result = TrainResult(
         best_val_loss=best_val,
         test_loss=test_loss,
         test_directional_accuracy=dir_acc,
+        test_classifier_accuracy=cls_acc,
+        test_classifier_p70_acc=cls_p70_acc,
+        test_classifier_p70_count=cls_p70_n,
         epochs_run=epochs_run,
         history=history,
         model_path=str(save_path),
     )
 
-    # Save sidecar json
     with open(save_path.with_suffix(".json"), "w") as f:
         json.dump(asdict(result), f, indent=2)
     return result

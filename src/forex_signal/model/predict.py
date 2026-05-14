@@ -1,4 +1,4 @@
-"""Inference wrapper — loads checkpoint and runs forward passes."""
+"""Inference wrapper — returns (predicted_returns, direction_probability, atr)."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from forex_signal.data.features import FEATURE_COLUMNS, compute_features
+from forex_signal.data.features import compute_features
 from forex_signal.model.lnn import ForexLNN
 
 
@@ -21,6 +21,8 @@ class Predictor:
     pred_horizon: int
     seq_len: int
     device: torch.device
+    target_mean: float = 0.0
+    target_std: float = 1.0
 
     @classmethod
     def load(cls, path: Path | str, seq_len: int = 60, device: str = "cpu") -> "Predictor":
@@ -43,12 +45,16 @@ class Predictor:
             pred_horizon=ckpt["pred_horizon"],
             seq_len=seq_len,
             device=torch.device(device),
+            target_mean=float(ckpt.get("target_mean", 0.0)),
+            target_std=float(ckpt.get("target_std", 1.0)),
         )
 
-    def predict_returns(self, ohlcv_df: pd.DataFrame) -> tuple[np.ndarray, float]:
-        """Compute features from raw OHLCV, run model, return (pred_returns, last_atr).
+    def predict(self, ohlcv_df: pd.DataFrame) -> tuple[np.ndarray, float, float]:
+        """Returns (pred_returns_raw_log, direction_probability, last_atr).
 
-        Input must contain at least `seq_len + warmup` bars. Warmup is ~30 bars for indicators.
+        - pred_returns_raw_log: (pred_horizon,) per-step predicted log returns (denormalized)
+        - direction_probability: scalar in [0,1], P(cumulative return > 0)
+        - last_atr: float, ATR(14) of the last bar — used for SL/TP sizing
         """
         features_df = compute_features(ohlcv_df)
         if len(features_df) < self.seq_len:
@@ -60,6 +66,13 @@ class Predictor:
         arr_norm = (arr - self.feature_means) / self.feature_stds
         x = torch.from_numpy(arr_norm[None, :, :]).to(self.device)
         with torch.no_grad():
-            pred = self.model(x).cpu().numpy()[0]
+            ret_norm, dir_logit = self.model(x)
+        pred_raw = ret_norm.cpu().numpy()[0] * self.target_std + self.target_mean
+        prob = float(torch.sigmoid(dir_logit).cpu().item())
         atr = float(features_df["atr_14"].iloc[-1])
-        return pred.astype(np.float32), atr
+        return pred_raw.astype(np.float32), prob, atr
+
+    # Back-compat alias for existing call sites that expect (returns, atr)
+    def predict_returns(self, ohlcv_df: pd.DataFrame) -> tuple[np.ndarray, float]:
+        ret, _prob, atr = self.predict(ohlcv_df)
+        return ret, atr

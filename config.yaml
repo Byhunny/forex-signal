@@ -2,8 +2,8 @@ symbol: EURUSD
 timeframe: M5
 
 data:
-  seq_len: 60
-  pred_horizon: 5
+  seq_len: 60        # 5 hours context on M5
+  pred_horizon: 5    # predict next 25 minutes
   train_years: 3
   yfinance_symbol: "EURUSD=X"
 
@@ -23,22 +23,32 @@ features:
 
 model:
   type: cfc
-  units: 48
-  dropout: 0.1
+  units: 96                    # bigger model for multi-task
+  dropout: 0.2                 # more regularization
 
 train:
-  batch_size: 128
-  epochs: 40
-  lr: 0.001
-  weight_decay: 1.0e-5
-  early_stopping_patience: 6
+  batch_size: 256
+  epochs: 60
+  lr: 0.0008
+  weight_decay: 1.0e-4         # stronger weight decay
+  early_stopping_patience: 12  # let it train longer before stopping
   val_fraction: 0.15
   test_fraction: 0.15
 
 signal:
-  min_predicted_return_bps: 1.5     # absolute predicted cumulative return (basis points) to consider a trade
-  min_directional_consistency: 0.6  # fraction of predicted steps in same direction
-  cooldown_bars: 3                   # wait N bars after exit before re-entering
+  cooldown_bars: 3
+
+# SMC entry permission engine — every "require_*" must pass before any trade
+entry:
+  require_session_filter: false
+  require_htf_bias: false
+  require_sweep: false
+  require_pullback: false
+  require_bos_or_choch: false
+  min_lnn_probability: 0.55        # ONLY LNN — test if model has standalone edge
+  sweep_recent_window: 10
+  pullback_window: 4
+  invert_direction: false
 
 risk:
   lot_size: 0.01
@@ -46,8 +56,8 @@ risk:
   max_concurrent_positions: 2
   max_daily_loss_pct: 2.0
   sl_atr_multiplier: 1.5
-  tp_atr_min_multiplier: 1.0
-  tp_atr_max_multiplier: 4.0
+  tp_atr_min_multiplier: 0.6        # tight TP for high win rate
+  tp_atr_max_multiplier: 1.5        # capped — small wins, many trades
   spread_pips_estimate: 0.8
 
 backtest:
