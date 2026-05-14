@@ -17,6 +17,7 @@ from forex_signal.config import PROJECT_ROOT, load_config
 from forex_signal.data.features import compute_features
 from forex_signal.data.mt5_client import make_client
 from forex_signal.model.predict import Predictor
+from forex_signal.notifier.telegram import is_configured as telegram_configured, notify as tg_notify
 from forex_signal.strategy.entry_engine import EntryConfig, compute_all_signals, evaluate_entry
 from forex_signal.strategy.risk import KillSwitchState, compute_trade_plan
 
@@ -185,6 +186,8 @@ def _check_and_act(strat: Strategy, client, mode: str, kill_switch: KillSwitchSt
                 if mode == "live":
                     r = client.close_position(int(pos["ticket"]))
                     _log_decision(strat, f"REVERSAL_CLOSE ticket={pos['ticket']} ok={r.success} err={r.error}")
+                    if r.success:
+                        tg_notify(f"🔄 *Reversal close* `{strat.name}` ticket `{pos['ticket']}`")
                 else:
                     _log_decision(strat, f"[paper] would close ticket={pos['ticket']} on reversal")
 
@@ -212,6 +215,7 @@ def _check_and_act(strat: Strategy, client, mode: str, kill_switch: KillSwitchSt
     )
 
     direction_str = "BUY" if decision.direction == 1 else "SELL"
+    arrow = "🟢" if decision.direction == 1 else "🔴"
     if mode == "live":
         r = client.place_order(
             symbol=strat.symbol,
@@ -223,8 +227,21 @@ def _check_and_act(strat: Strategy, client, mode: str, kill_switch: KillSwitchSt
             comment=strat.name[:31],  # MT5 comment max ~32 chars
         )
         _log_decision(strat, f"OPEN {direction_str} prob={prob:.3f} sl={plan.sl_price:.5f} tp={plan.tp_price:.5f} ok={r.success} ticket={r.ticket} err={r.error}")
+        if r.success:
+            tg_notify(
+                f"{arrow} *{direction_str}* `{strat.symbol}` @ {last_close:.5f}\n"
+                f"Strategy: `{strat.name}`\n"
+                f"SL: `{plan.sl_price:.5f}`  TP: `{plan.tp_price:.5f}`\n"
+                f"Prob: {prob:.3f}  ATR: {atr:.5f}  Ticket: `{r.ticket}`"
+            )
+        else:
+            tg_notify(f"⚠️ OPEN FAILED `{strat.name}` {direction_str} — {r.error}")
     else:
         _log_decision(strat, f"[paper] OPEN {direction_str} prob={prob:.3f} price={last_close:.5f} sl={plan.sl_price:.5f} tp={plan.tp_price:.5f}")
+        tg_notify(
+            f"{arrow} *[paper] {direction_str}* `{strat.symbol}` @ {last_close:.5f}\n"
+            f"Strategy: `{strat.name}`  Prob: {prob:.3f}"
+        )
 
 
 def run_battle_royale(mode: str = "paper") -> int:
@@ -269,6 +286,16 @@ def run_battle_royale(mode: str = "paper") -> int:
     for s in strategies:
         log.info("  contender: %s (magic=%d)", s.name, s.magic)
 
+    if telegram_configured():
+        tg_notify(
+            f"🎮 *Battle Royale started*\n"
+            f"Mode: `{mode}`\n"
+            f"Contenders: *{len(strategies)}*\n"
+            f"Account equity: ${float(state.get('day_start_equity', 0)):.2f}"
+        )
+    else:
+        log.info("Telegram not configured (set TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID in .env to enable notifications)")
+
     try:
         while True:
             sleep_for = _seconds_until_next_m5_close()
@@ -292,6 +319,10 @@ def run_battle_royale(mode: str = "paper") -> int:
             )
             if ks.tripped:
                 log.warning("KILL SWITCH TRIPPED — daily PnL %.2f%%", ks.daily_pnl_pct)
+                if not state.get("kill_notified_for") == today_now:
+                    tg_notify(f"🛑 *KILL SWITCH TRIPPED* daily PnL {ks.daily_pnl_pct:+.2f}% — no new trades today")
+                    state["kill_notified_for"] = today_now
+                    _save_state(state)
 
             n_open = sum(1 for s in strategies for _ in client.get_positions(s.symbol) if _.get("magic") == s.magic)
             log.info("tick %s UTC | equity=$%.2f | daily=%+.2f%% | open_positions=%d",
