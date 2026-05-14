@@ -1,0 +1,52 @@
+{
+  "best_val_loss": 2.97667615281211,
+  "test_loss": 1.8999576038784451,
+  "test_directional_accuracy": 0.5495978552278821,
+  "test_classifier_accuracy": 0.546916890080429,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 5,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7018563078670967,
+      "val_loss": 2.97667615281211,
+      "train_mse": 1.0137395008308132,
+      "train_bce": 0.6881168019480821,
+      "secs": 2.181854724884033
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6820743607311714,
+      "val_loss": 2.9952687886026172,
+      "train_mse": 1.0017791223235246,
+      "train_bce": 0.6802952304119017,
+      "secs": 2.108947277069092
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.665723121747738,
+      "val_loss": 2.9924645092752247,
+      "train_mse": 0.991772736718015,
+      "train_bce": 0.6739503813952934,
+      "secs": 2.0937490463256836
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6547797569414464,
+      "val_loss": 3.0144095751974316,
+      "train_mse": 0.9864617084584585,
+      "train_bce": 0.6683180470292162,
+      "secs": 2.0740480422973633
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.636468520978602,
+      "val_loss": 3.0218373934427896,
+      "train_mse": 0.9744885403935503,
+      "train_bce": 0.6619799820388236,
+      "secs": 2.066497325897217
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_USDSEK_M15.pt"
+}

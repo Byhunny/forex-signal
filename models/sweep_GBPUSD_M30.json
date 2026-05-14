@@ -1,0 +1,52 @@
+{
+  "best_val_loss": 1.8117883735232883,
+  "test_loss": 1.8082525001631842,
+  "test_directional_accuracy": 0.5026809651474531,
+  "test_classifier_accuracy": 0.5370866845397676,
+  "test_classifier_p70_acc": 1.0,
+  "test_classifier_p70_count": 1,
+  "epochs_run": 5,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7071010354088574,
+      "val_loss": 1.8117883735232883,
+      "train_mse": 1.0147313511953122,
+      "train_bce": 0.6923696842135453,
+      "secs": 2.8383848667144775
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6928613273108877,
+      "val_loss": 1.8150211705101862,
+      "train_mse": 1.0035964003423365,
+      "train_bce": 0.689264929149209,
+      "secs": 2.7484865188598633
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6858567799009927,
+      "val_loss": 1.8256385326385498,
+      "train_mse": 0.9987117175648852,
+      "train_bce": 0.6871450652436513,
+      "secs": 2.8078036308288574
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6818783239620487,
+      "val_loss": 1.8289331595102947,
+      "train_mse": 0.9963007096837206,
+      "train_bce": 0.6855776113707844,
+      "secs": 2.6904385089874268
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6671810949720987,
+      "val_loss": 1.8487525979677837,
+      "train_mse": 0.9845681314061328,
+      "train_bce": 0.6826129584777646,
+      "secs": 2.1508469581604004
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_GBPUSD_M30.pt"
+}

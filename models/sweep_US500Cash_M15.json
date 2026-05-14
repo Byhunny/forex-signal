@@ -1,0 +1,52 @@
+{
+  "best_val_loss": 3.423444132010142,
+  "test_loss": 1.4647166199154324,
+  "test_directional_accuracy": 0.4718498659517426,
+  "test_classifier_accuracy": 0.5500446827524575,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 5,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7085356726879026,
+      "val_loss": 3.423444132010142,
+      "train_mse": 1.0161141847691886,
+      "train_bce": 0.6924214886456002,
+      "secs": 2.2661337852478027
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6922237829464237,
+      "val_loss": 3.430732866128286,
+      "train_mse": 1.001774548757367,
+      "train_bce": 0.6904492312815131,
+      "secs": 2.8159737586975098
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.685311842255476,
+      "val_loss": 3.43699230088128,
+      "train_mse": 0.9970511903123158,
+      "train_bce": 0.6882606512162743,
+      "secs": 2.7185919284820557
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6746944581590049,
+      "val_loss": 3.4406482908460827,
+      "train_mse": 0.9881770363668116,
+      "train_bce": 0.6865174239728509,
+      "secs": 2.793794631958008
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6580517481013042,
+      "val_loss": 3.470520145363278,
+      "train_mse": 0.9731841865109234,
+      "train_bce": 0.6848675594097231,
+      "secs": 2.6803057193756104
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_US500Cash_M15.pt"
+}

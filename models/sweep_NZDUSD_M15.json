@@ -1,0 +1,60 @@
+{
+  "best_val_loss": 2.4414530860053167,
+  "test_loss": 1.7330186764399211,
+  "test_directional_accuracy": 0.5290437890974083,
+  "test_classifier_accuracy": 0.517426273458445,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 6,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.70513138829208,
+      "val_loss": 2.4439090887705484,
+      "train_mse": 1.0116192625790108,
+      "train_bce": 0.693512128620613,
+      "secs": 2.0397326946258545
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6925912252286586,
+      "val_loss": 2.4414530860053167,
+      "train_mse": 1.0033058436905467,
+      "train_bce": 0.689285381538112,
+      "secs": 2.0488176345825195
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6825524772085794,
+      "val_loss": 2.443567600515154,
+      "train_mse": 0.9957199721801572,
+      "train_bce": 0.6868325093897377,
+      "secs": 1.9958982467651367
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6682036562663753,
+      "val_loss": 2.455877853764428,
+      "train_mse": 0.9836496020235667,
+      "train_bce": 0.6845540556965805,
+      "secs": 2.074336051940918
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6413366765510746,
+      "val_loss": 2.4767615927590265,
+      "train_mse": 0.9623177822043256,
+      "train_bce": 0.6790188994349503,
+      "secs": 2.059075117111206
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.6060329021477118,
+      "val_loss": 2.501153979036543,
+      "train_mse": 0.9330601568629102,
+      "train_bce": 0.6729727438310298,
+      "secs": 2.000072479248047
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_NZDUSD_M15.pt"
+}

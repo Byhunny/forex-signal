@@ -1,0 +1,52 @@
+{
+  "best_val_loss": 1.1145085791746776,
+  "test_loss": 0.9730181197325388,
+  "test_directional_accuracy": 0.5116175156389634,
+  "test_classifier_accuracy": 0.5281501340482574,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 5,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7086212111682426,
+      "val_loss": 1.1145085791746776,
+      "train_mse": 1.0153023615116026,
+      "train_bce": 0.6933188511104118,
+      "secs": 2.0831925868988037
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6915986712385969,
+      "val_loss": 1.115613020128674,
+      "train_mse": 1.0015182545999202,
+      "train_bce": 0.6900804122773613,
+      "secs": 2.0692217350006104
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.684243388292266,
+      "val_loss": 1.1172420415613387,
+      "train_mse": 0.9956154321751943,
+      "train_bce": 0.6886279546633,
+      "secs": 2.0472326278686523
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6731994806266413,
+      "val_loss": 1.1189491980605655,
+      "train_mse": 0.9868500043706196,
+      "train_bce": 0.6863494820711089,
+      "secs": 2.118722438812256
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6571753141356678,
+      "val_loss": 1.1304563747511969,
+      "train_mse": 0.9759414588532797,
+      "train_bce": 0.6812338596437035,
+      "secs": 2.029362916946411
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_USDCNH_M5.pt"
+}

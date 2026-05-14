@@ -1,0 +1,52 @@
+{
+  "best_val_loss": 1.2243155141671498,
+  "test_loss": 1.2500912149747212,
+  "test_directional_accuracy": 0.5558534405719392,
+  "test_classifier_accuracy": 0.5598748882931188,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 5,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.6999909761475354,
+      "val_loss": 1.2243155141671498,
+      "train_mse": 1.0130203853293163,
+      "train_bce": 0.68697059954085,
+      "secs": 1.9859223365783691
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6848722231097337,
+      "val_loss": 1.2281107736958399,
+      "train_mse": 1.0019385400341778,
+      "train_bce": 0.6829336801680123,
+      "secs": 1.9966626167297363
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6722753571300972,
+      "val_loss": 1.2249455485079024,
+      "train_mse": 0.993547194614643,
+      "train_bce": 0.6787281545197091,
+      "secs": 1.986466407775879
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6604270033720063,
+      "val_loss": 1.2364650203122034,
+      "train_mse": 0.985552430879779,
+      "train_bce": 0.6748745681309118,
+      "secs": 2.0420100688934326
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6461792966214621,
+      "val_loss": 1.2387944559256236,
+      "train_mse": 0.9770069682016606,
+      "train_bce": 0.6691723284198017,
+      "secs": 2.004516839981079
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_EURCAD_M30.pt"
+}

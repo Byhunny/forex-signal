@@ -1,0 +1,52 @@
+{
+  "best_val_loss": 1.3753490911589727,
+  "test_loss": 1.4494792752795749,
+  "test_directional_accuracy": 0.5004468275245755,
+  "test_classifier_accuracy": 0.5393208221626452,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 5,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7086011040501479,
+      "val_loss": 1.3753490911589727,
+      "train_mse": 1.0142634180260868,
+      "train_bce": 0.6943376842068463,
+      "secs": 2.1066646575927734
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6920008121467218,
+      "val_loss": 1.3780870139598846,
+      "train_mse": 1.000462136254078,
+      "train_bce": 0.6915386784367445,
+      "secs": 2.0464096069335938
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6841064051883976,
+      "val_loss": 1.3885063032309215,
+      "train_mse": 0.994307172007677,
+      "train_bce": 0.6897992324538347,
+      "secs": 2.0852503776550293
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6724428316441977,
+      "val_loss": 1.3849864270952013,
+      "train_mse": 0.9843496047868961,
+      "train_bce": 0.6880932210422144,
+      "secs": 2.1156930923461914
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6594125962838895,
+      "val_loss": 1.3872992363240984,
+      "train_mse": 0.974241703748703,
+      "train_bce": 0.6851708889007568,
+      "secs": 2.105442523956299
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_US100Cash_M30.pt"
+}

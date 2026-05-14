@@ -1,0 +1,68 @@
+{
+  "best_val_loss": 1.2731756667296092,
+  "test_loss": 1.183418823613061,
+  "test_directional_accuracy": 0.4924039320822163,
+  "test_classifier_accuracy": 0.5290437890974083,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 7,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7065149196764318,
+      "val_loss": 1.276838822497262,
+      "train_mse": 1.0143085521895712,
+      "train_bce": 0.6922063689406325,
+      "secs": 2.0539469718933105
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.693342091106787,
+      "val_loss": 1.2770443658034007,
+      "train_mse": 1.003868448298152,
+      "train_bce": 0.6894736493506083,
+      "secs": 2.073178291320801
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6863655040903789,
+      "val_loss": 1.2731756667296092,
+      "train_mse": 1.0000303474868215,
+      "train_bce": 0.6863351638724164,
+      "secs": 2.0604782104492188
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6753234572526885,
+      "val_loss": 1.2810545133219824,
+      "train_mse": 0.9921156473276092,
+      "train_bce": 0.6832078026562203,
+      "secs": 2.1445677280426025
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6653375959977872,
+      "val_loss": 1.2835478484630585,
+      "train_mse": 0.987345302977213,
+      "train_bce": 0.6779922981087755,
+      "secs": 2.0581367015838623
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.6471343985417994,
+      "val_loss": 1.2892064849535625,
+      "train_mse": 0.9748547884022317,
+      "train_bce": 0.6722796072320241,
+      "secs": 1.9883456230163574
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.6143930147333843,
+      "val_loss": 1.3061515258418188,
+      "train_mse": 0.9535975761529876,
+      "train_bce": 0.6607954327653094,
+      "secs": 2.0385262966156006
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_USDSEK_M5.pt"
+}

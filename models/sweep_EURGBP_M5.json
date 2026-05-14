@@ -1,0 +1,60 @@
+{
+  "best_val_loss": 1.31617937485377,
+  "test_loss": 1.8065376546647813,
+  "test_directional_accuracy": 0.515638963360143,
+  "test_classifier_accuracy": 0.516532618409294,
+  "test_classifier_p70_acc": 0.6428571428571429,
+  "test_classifier_p70_count": 14,
+  "epochs_run": 6,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7002452408395163,
+      "val_loss": 1.3199191590150197,
+      "train_mse": 1.0114186675083348,
+      "train_bce": 0.6888265776924971,
+      "secs": 1.9827220439910889
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6842347630640355,
+      "val_loss": 1.31617937485377,
+      "train_mse": 1.0004782015230598,
+      "train_bce": 0.6837565629947476,
+      "secs": 1.9602577686309814
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6687883807391655,
+      "val_loss": 1.332132167286343,
+      "train_mse": 0.9900281756389432,
+      "train_bce": 0.678760200012021,
+      "secs": 1.9691758155822754
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6520931764346798,
+      "val_loss": 1.3187209433979459,
+      "train_mse": 0.9786082927773638,
+      "train_bce": 0.6734848901992891,
+      "secs": 2.0238382816314697
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.633817534621169,
+      "val_loss": 1.3274451361762152,
+      "train_mse": 0.9679111889222773,
+      "train_bce": 0.6659063515139789,
+      "secs": 1.9710257053375244
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.598647076909135,
+      "val_loss": 1.3572052352958255,
+      "train_mse": 0.9439354829671907,
+      "train_bce": 0.6547115997570317,
+      "secs": 1.9800527095794678
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_EURGBP_M5.pt"
+}

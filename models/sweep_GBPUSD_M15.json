@@ -1,0 +1,68 @@
+{
+  "best_val_loss": 2.2963521679242453,
+  "test_loss": 1.5210083193249173,
+  "test_directional_accuracy": 0.5294906166219839,
+  "test_classifier_accuracy": 0.5035746201966042,
+  "test_classifier_p70_acc": 1.0,
+  "test_classifier_p70_count": 1,
+  "epochs_run": 7,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7073159174221317,
+      "val_loss": 2.2973053654034934,
+      "train_mse": 1.0141734778881073,
+      "train_bce": 0.6931424373533668,
+      "secs": 2.500058650970459
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6928289663500902,
+      "val_loss": 2.2972462839550443,
+      "train_mse": 1.0028218292608493,
+      "train_bce": 0.6900071414505563,
+      "secs": 2.7588157653808594
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6871128111350826,
+      "val_loss": 2.2963521679242453,
+      "train_mse": 0.9985773716031051,
+      "train_bce": 0.6885354337168903,
+      "secs": 2.5893537998199463
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6816095535348101,
+      "val_loss": 2.3077204293674893,
+      "train_mse": 0.9956375629436679,
+      "train_bce": 0.6859719825953972,
+      "secs": 2.6329543590545654
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6684350473124807,
+      "val_loss": 2.311527887980143,
+      "train_mse": 0.9859469503891177,
+      "train_bce": 0.6824880918351616,
+      "secs": 2.5495567321777344
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.6493663860530388,
+      "val_loss": 2.340997132990095,
+      "train_mse": 0.9729250117046077,
+      "train_bce": 0.6764413699871157,
+      "secs": 2.6107425689697266
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.6189173154714631,
+      "val_loss": 2.3740179671181574,
+      "train_mse": 0.9514959541762747,
+      "train_bce": 0.6674213656565038,
+      "secs": 2.5779950618743896
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_GBPUSD_M15.pt"
+}

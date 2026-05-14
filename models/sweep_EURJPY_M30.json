@@ -1,0 +1,52 @@
+{
+  "best_val_loss": 1.4431535303592682,
+  "test_loss": 1.3027577300866444,
+  "test_directional_accuracy": 0.5308310991957105,
+  "test_classifier_accuracy": 0.5522788203753352,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 5,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7071794867515564,
+      "val_loss": 1.4431535303592682,
+      "train_mse": 1.0140723062724601,
+      "train_bce": 0.6931071732102371,
+      "secs": 1.9623126983642578
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6930825753909786,
+      "val_loss": 1.4444194336732228,
+      "train_mse": 1.0041481997908615,
+      "train_bce": 0.6889343697850298,
+      "secs": 1.868412971496582
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6847357066666209,
+      "val_loss": 1.4477245112260182,
+      "train_mse": 0.9970718091580926,
+      "train_bce": 0.6876638989623,
+      "secs": 1.8880729675292969
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.67578737183315,
+      "val_loss": 1.4516607191827562,
+      "train_mse": 0.9910952543340078,
+      "train_bce": 0.6846921167722563,
+      "secs": 1.8693201541900635
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.657679928512108,
+      "val_loss": 1.4663839373323653,
+      "train_mse": 0.9759660116056117,
+      "train_bce": 0.6817139147258386,
+      "secs": 1.9484610557556152
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_EURJPY_M30.pt"
+}

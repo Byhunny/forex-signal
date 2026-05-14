@@ -1,0 +1,68 @@
+{
+  "best_val_loss": 5.484594285488129,
+  "test_loss": 3.510405811998579,
+  "test_directional_accuracy": 0.5250223413762288,
+  "test_classifier_accuracy": 0.5049151027703307,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 7,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7104595986808218,
+      "val_loss": 5.487857037120396,
+      "train_mse": 1.0158795881562117,
+      "train_bce": 0.6945800105246102,
+      "secs": 2.1211342811584473
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6938667980636037,
+      "val_loss": 5.500595847765605,
+      "train_mse": 1.0020872768832416,
+      "train_bce": 0.6917795168190468,
+      "secs": 2.0496301651000977
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6913044961487376,
+      "val_loss": 5.484594285488129,
+      "train_mse": 1.0004288248899507,
+      "train_bce": 0.6908756647168136,
+      "secs": 2.105806589126587
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.679550877431544,
+      "val_loss": 5.497324645519257,
+      "train_mse": 0.9895154368586656,
+      "train_bce": 0.6900354383922205,
+      "secs": 2.131680727005005
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6657404318088438,
+      "val_loss": 5.537224822574192,
+      "train_mse": 0.9781719460719969,
+      "train_bce": 0.6875684835561892,
+      "secs": 2.079695224761963
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.6397973182724743,
+      "val_loss": 5.582432455486721,
+      "train_mse": 0.9558532768633308,
+      "train_bce": 0.6839440385015999,
+      "secs": 2.147041082382202
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.5938454648343527,
+      "val_loss": 5.636092291937934,
+      "train_mse": 0.9193432178439164,
+      "train_bce": 0.6745022440828928,
+      "secs": 2.056535005569458
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_GOLD_M30.pt"
+}

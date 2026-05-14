@@ -1,0 +1,60 @@
+{
+  "best_val_loss": 2.6828179160753884,
+  "test_loss": 1.4675964713096619,
+  "test_directional_accuracy": 0.514745308310992,
+  "test_classifier_accuracy": 0.5232350312779267,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 6,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7065932430872104,
+      "val_loss": 2.688559737470415,
+      "train_mse": 1.012933140847741,
+      "train_bce": 0.6936601080545565,
+      "secs": 2.0632824897766113
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6946618993107865,
+      "val_loss": 2.6828179160753884,
+      "train_mse": 1.0042634780814008,
+      "train_bce": 0.6903984226831575,
+      "secs": 1.9994409084320068
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6842309454592264,
+      "val_loss": 2.6869115233421326,
+      "train_mse": 0.9967178397062348,
+      "train_bce": 0.6875131115680788,
+      "secs": 2.01171612739563
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6731770881792394,
+      "val_loss": 2.688830408785078,
+      "train_mse": 0.9893531813854124,
+      "train_bce": 0.6838238995249678,
+      "secs": 2.0627245903015137
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6557451893643635,
+      "val_loss": 2.7308368616633945,
+      "train_mse": 0.9770370169383723,
+      "train_bce": 0.6787081811486221,
+      "secs": 2.0666935443878174
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.6256949290996645,
+      "val_loss": 2.7478568222787647,
+      "train_mse": 0.9546643328375932,
+      "train_bce": 0.6710305948082994,
+      "secs": 2.0830588340759277
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_AUDUSD_M15.pt"
+}

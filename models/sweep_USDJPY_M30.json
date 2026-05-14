@@ -1,0 +1,52 @@
+{
+  "best_val_loss": 1.5255971882078383,
+  "test_loss": 1.31674016184277,
+  "test_directional_accuracy": 0.48078641644325293,
+  "test_classifier_accuracy": 0.48570151921358357,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 5,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7068428702470733,
+      "val_loss": 1.5255971882078383,
+      "train_mse": 1.0143723386089976,
+      "train_bce": 0.6924705338187334,
+      "secs": 1.9720988273620605
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6927609661730325,
+      "val_loss": 1.5256097846561008,
+      "train_mse": 1.004966908111805,
+      "train_bce": 0.6877940486117107,
+      "secs": 1.971303939819336
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6809587042506149,
+      "val_loss": 1.5273615452978346,
+      "train_mse": 0.9958869982056502,
+      "train_bce": 0.6850717009567633,
+      "secs": 1.9103565216064453
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6713244987697136,
+      "val_loss": 1.5318841139475505,
+      "train_mse": 0.989482961049894,
+      "train_bce": 0.6818415399004774,
+      "secs": 1.9384372234344482
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6592013516077182,
+      "val_loss": 1.5405806303024292,
+      "train_mse": 0.9801849395763583,
+      "train_bce": 0.6790164083969302,
+      "secs": 2.02347469329834
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_USDJPY_M30.pt"
+}

@@ -1,0 +1,60 @@
+{
+  "best_val_loss": 1.3862837718592749,
+  "test_loss": 1.1737138397163815,
+  "test_directional_accuracy": 0.5393208221626452,
+  "test_classifier_accuracy": 0.5433422698838248,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 6,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7078471619908402,
+      "val_loss": 1.386735240618388,
+      "train_mse": 1.0163501268479882,
+      "train_bce": 0.6914970431385971,
+      "secs": 2.101496696472168
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6911411823295965,
+      "val_loss": 1.3862837718592749,
+      "train_mse": 1.0029159042893387,
+      "train_bce": 0.6882252802209157,
+      "secs": 2.1353087425231934
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6890075119530283,
+      "val_loss": 1.3914320005310907,
+      "train_mse": 1.002937367049659,
+      "train_bce": 0.6860701499915705,
+      "secs": 2.1455881595611572
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6802190585834225,
+      "val_loss": 1.3977891869015164,
+      "train_mse": 0.9951985420250311,
+      "train_bce": 0.6850205143777336,
+      "secs": 2.0137670040130615
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6700201049083616,
+      "val_loss": 1.3956258628103468,
+      "train_mse": 0.9882979698297454,
+      "train_bce": 0.6817221336248445,
+      "secs": 1.9950652122497559
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.6512047125072014,
+      "val_loss": 1.4219057228830125,
+      "train_mse": 0.9743533585129714,
+      "train_bce": 0.6768513539942299,
+      "secs": 1.9451093673706055
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_BTCUSD_M5.pt"
+}

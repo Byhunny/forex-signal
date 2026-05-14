@@ -1,0 +1,68 @@
+{
+  "best_val_loss": 1.9171865185101826,
+  "test_loss": 1.1825254890653822,
+  "test_directional_accuracy": 0.5040214477211796,
+  "test_classifier_accuracy": 0.5151921358355674,
+  "test_classifier_p70_acc": 0.4,
+  "test_classifier_p70_count": 5,
+  "epochs_run": 7,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.705714497624374,
+      "val_loss": 1.9209203521410625,
+      "train_mse": 1.0150758776722886,
+      "train_bce": 0.6906386206789714,
+      "secs": 2.0071141719818115
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6890195855280248,
+      "val_loss": 1.9224134683609009,
+      "train_mse": 1.0035649494427006,
+      "train_bce": 0.6854546331777805,
+      "secs": 1.9907102584838867
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6780206473862254,
+      "val_loss": 1.9171865185101826,
+      "train_mse": 0.9969685651907106,
+      "train_bce": 0.6810520814686287,
+      "secs": 1.9576215744018555
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6691736913308866,
+      "val_loss": 1.9223604400952656,
+      "train_mse": 0.9911065959348911,
+      "train_bce": 0.6780671033917404,
+      "secs": 1.9777686595916748
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6554827065002629,
+      "val_loss": 1.9337342249022589,
+      "train_mse": 0.98114012072726,
+      "train_bce": 0.6743425901343183,
+      "secs": 1.9349143505096436
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.6350535285182115,
+      "val_loss": 1.9574123157395258,
+      "train_mse": 0.9645606388406056,
+      "train_bce": 0.6704928904044919,
+      "secs": 2.0596764087677
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.5926562809362643,
+      "val_loss": 1.9854779839515686,
+      "train_mse": 0.9302256834216234,
+      "train_bce": 0.6624305989684128,
+      "secs": 1.9417190551757812
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_EURAUD_M15.pt"
+}

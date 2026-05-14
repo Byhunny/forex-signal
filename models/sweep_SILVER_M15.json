@@ -1,0 +1,52 @@
+{
+  "best_val_loss": 1.79835444688797,
+  "test_loss": 1.0969239738252428,
+  "test_directional_accuracy": 0.49508489722966936,
+  "test_classifier_accuracy": 0.4812332439678284,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 5,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7067384574471451,
+      "val_loss": 1.79835444688797,
+      "train_mse": 1.016042263769522,
+      "train_bce": 0.6906961893163076,
+      "secs": 2.2116448879241943
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6902715549236391,
+      "val_loss": 1.7992076211505466,
+      "train_mse": 1.003531194678167,
+      "train_bce": 0.686740361335801,
+      "secs": 2.146878242492676
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6773472224793784,
+      "val_loss": 1.8067277669906616,
+      "train_mse": 0.9931781848029393,
+      "train_bce": 0.6841690424011975,
+      "secs": 2.070348024368286
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6688863853128946,
+      "val_loss": 1.8114580776956346,
+      "train_mse": 0.9865136364611183,
+      "train_bce": 0.6823727481248902,
+      "secs": 2.0904476642608643
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6544735475284298,
+      "val_loss": 1.8124596542782254,
+      "train_mse": 0.974487370834118,
+      "train_bce": 0.6799861686985668,
+      "secs": 2.069226026535034
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_SILVER_M15.pt"
+}

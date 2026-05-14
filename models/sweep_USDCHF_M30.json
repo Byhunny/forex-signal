@@ -1,0 +1,60 @@
+{
+  "best_val_loss": 1.613964941766527,
+  "test_loss": 1.4004382358656988,
+  "test_directional_accuracy": 0.5397676496872207,
+  "test_classifier_accuracy": 0.5580875781948168,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 6,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7111622269560651,
+      "val_loss": 1.6164874699380662,
+      "train_mse": 1.0185437842113216,
+      "train_bce": 0.6926184427447435,
+      "secs": 2.0358848571777344
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.688465679564127,
+      "val_loss": 1.613964941766527,
+      "train_mse": 1.0013488901824485,
+      "train_bce": 0.6871167944698799,
+      "secs": 1.9931397438049316
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6764356348572709,
+      "val_loss": 1.6244999302758112,
+      "train_mse": 0.993593964634872,
+      "train_bce": 0.682841668041741,
+      "secs": 2.030329465866089
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6616450257417632,
+      "val_loss": 1.626471910211775,
+      "train_mse": 0.983268875901292,
+      "train_bce": 0.6783761527480149,
+      "secs": 2.0560920238494873
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6424236210381113,
+      "val_loss": 1.6491077542304993,
+      "train_mse": 0.9701557740932558,
+      "train_bce": 0.6722678396759963,
+      "secs": 1.964867353439331
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.619319556689844,
+      "val_loss": 1.663598120212555,
+      "train_mse": 0.9518091744039117,
+      "train_bce": 0.6675103866472477,
+      "secs": 1.9376356601715088
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_USDCHF_M30.pt"
+}

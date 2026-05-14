@@ -1,0 +1,68 @@
+{
+  "best_val_loss": 1.7101340625021193,
+  "test_loss": 1.3269136349360149,
+  "test_directional_accuracy": 0.5558534405719392,
+  "test_classifier_accuracy": 0.5661304736371761,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 7,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7051808834075928,
+      "val_loss": 1.7123099499278598,
+      "train_mse": 1.0146742484918454,
+      "train_bce": 0.6905066334619755,
+      "secs": 2.1260972023010254
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.691383924426102,
+      "val_loss": 1.7118951214684381,
+      "train_mse": 1.0038156073267868,
+      "train_bce": 0.687568320006859,
+      "secs": 1.9765117168426514
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.683125128106373,
+      "val_loss": 1.7101340625021193,
+      "train_mse": 0.9975042146880452,
+      "train_bce": 0.6856209163258715,
+      "secs": 1.9738457202911377
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.67518718358947,
+      "val_loss": 1.7180166575643752,
+      "train_mse": 0.9916548699867435,
+      "train_bce": 0.6835323136027266,
+      "secs": 2.031134843826294
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6623784579881808,
+      "val_loss": 1.7249882684813604,
+      "train_mse": 0.982458794262351,
+      "train_bce": 0.6799196651796016,
+      "secs": 2.011404037475586
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.6464837193489075,
+      "val_loss": 1.7501933177312214,
+      "train_mse": 0.9717785527066487,
+      "train_bce": 0.6747051702766884,
+      "secs": 2.018498420715332
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.609488225564724,
+      "val_loss": 1.7956625156932406,
+      "train_mse": 0.9441016825234018,
+      "train_bce": 0.6653865357724632,
+      "secs": 2.0125770568847656
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\sweep_USDCAD_M30.pt"
+}

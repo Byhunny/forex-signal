@@ -1,11 +1,11 @@
-symbol: EURUSD
-timeframe: M5
+symbol: USDSEK
+timeframe: M30
 
 data:
-  seq_len: 60        # 5 hours context on M5
-  pred_horizon: 5    # predict next 25 minutes
+  seq_len: 60
+  pred_horizon: 5
   train_years: 3
-  yfinance_symbol: "EURUSD=X"
+  yfinance_symbol: "USDSEK=X"
 
 features:
   - returns
@@ -23,15 +23,15 @@ features:
 
 model:
   type: cfc
-  units: 96                    # bigger model for multi-task
-  dropout: 0.2                 # more regularization
+  units: 64
+  dropout: 0.15
 
 train:
   batch_size: 256
-  epochs: 60
+  epochs: 30
   lr: 0.0008
-  weight_decay: 1.0e-4         # stronger weight decay
-  early_stopping_patience: 12  # let it train longer before stopping
+  weight_decay: 5.0e-5
+  early_stopping_patience: 6
   val_fraction: 0.15
   test_fraction: 0.15
 
@@ -40,12 +40,14 @@ signal:
 
 # SMC entry permission engine — every "require_*" must pass before any trade
 entry:
+  # Production: USDSEK M30 lnn_very_strong (sweep winner)
+  # Backtest: 282 trades, WR 79.4%, PF 1.42, +$594, MaxDD -1.9%
   require_session_filter: false
   require_htf_bias: false
   require_sweep: false
   require_pullback: false
   require_bos_or_choch: false
-  min_lnn_probability: 0.55        # ONLY LNN — test if model has standalone edge
+  min_lnn_probability: 0.65        # high-confidence LNN signal
   sweep_recent_window: 10
   pullback_window: 4
   invert_direction: false

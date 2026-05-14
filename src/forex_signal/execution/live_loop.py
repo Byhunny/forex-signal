@@ -57,7 +57,11 @@ def run_live(mode: str = "paper") -> int:
     symbol = cfg.symbol
     tf = cfg.timeframe
 
-    predictor = Predictor.load(PROJECT_ROOT / "models" / "lnn_eurusd_m5.pt", seq_len=seq_len)
+    model_path = PROJECT_ROOT / cfg.get("model_path", default="models/lnn_usdsek_m30.pt")
+    if not model_path.exists():
+        # legacy default lookup
+        model_path = PROJECT_ROOT / "models" / f"lnn_{symbol.lower()}_{tf.lower()}.pt"
+    predictor = Predictor.load(model_path, seq_len=seq_len)
     client = make_client(prefer_real=True)
     if not client.connect(cfg.mt5.login, cfg.mt5.password, cfg.mt5.server, cfg.mt5.path):
         log.error("MT5 connect failed")
