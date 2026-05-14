@@ -160,6 +160,14 @@ def cmd_live(args: argparse.Namespace) -> int:
     return run_live(mode=args.mode)
 
 
+def cmd_battle(args: argparse.Namespace) -> int:
+    if not is_mt5_available():
+        log.error("MetaTrader5 not available — run on Windows")
+        return 2
+    from forex_signal.execution.battle_royale import run_battle_royale
+    return run_battle_royale(mode=args.mode)
+
+
 def _autodetect_cache(symbol: str) -> Path | None:
     candidates = sorted(DEFAULT_CACHE.glob(f"{symbol}_*.parquet"))
     return candidates[-1] if candidates else None
@@ -199,6 +207,10 @@ def main(argv: list[str] | None = None) -> int:
     p_li = sub.add_parser("live")
     p_li.add_argument("--mode", choices=["paper", "live"], default="paper")
     p_li.set_defaults(func=cmd_live)
+
+    p_br = sub.add_parser("battle", help="Run all TOP 10 strategies in parallel — battle royale")
+    p_br.add_argument("--mode", choices=["paper", "live"], default="paper")
+    p_br.set_defaults(func=cmd_battle)
 
     args = parser.parse_args(argv)
     return args.func(args)
