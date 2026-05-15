@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 import time
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
@@ -22,6 +23,9 @@ from forex_signal.strategy.entry_engine import EntryConfig, compute_all_signals,
 from forex_signal.strategy.risk import KillSwitchState, compute_trade_plan
 
 log = logging.getLogger("battle_royale")
+
+# MT5 Python package is NOT thread-safe — serialize all MT5 calls behind this lock
+_MT5_LOCK = threading.RLock()
 
 STATE_FILE = PROJECT_ROOT / "logs" / "battle_state.json"
 DECISIONS_LOG = PROJECT_ROOT / "logs" / "battle_decisions.log"
@@ -154,7 +158,8 @@ def _server_now(client) -> "datetime":
     """Get broker's wall-clock time via latest tick — broker can be in different TZ than UTC."""
     import MetaTrader5 as _mt5
     from datetime import datetime, timezone
-    tick = _mt5.symbol_info_tick("EURUSD")
+    with _MT5_LOCK:
+        tick = _mt5.symbol_info_tick("EURUSD")
     if tick and tick.time:
         return datetime.fromtimestamp(tick.time, tz=timezone.utc)
     return datetime.now(timezone.utc)
@@ -163,19 +168,22 @@ def _server_now(client) -> "datetime":
 def _status_text(client, strategies: list[Strategy], state: dict) -> str:
     import MetaTrader5 as _mt5
     from datetime import datetime, timedelta, timezone
-    info = client.get_account_info()
+    with _MT5_LOCK:
+        info = client.get_account_info()
     eq = float(info["equity"])
     day_start = float(state.get("day_start_equity", eq))
     daily_pct = (eq - day_start) / day_start * 100.0 if day_start else 0.0
 
     our_magics = {s.magic for s in strategies}
-    open_pos = [p for p in (client.get_positions() or []) if p.get("magic") in our_magics]
+    with _MT5_LOCK:
+        open_pos = [p for p in (client.get_positions() or []) if p.get("magic") in our_magics]
 
     # Use SERVER time for the window — broker can be in UTC+N
     server_now = _server_now(client)
     day_start_server = server_now.replace(hour=0, minute=0, second=0, microsecond=0)
     # Pad on both sides for safety
-    deals = _mt5.history_deals_get(day_start_server - timedelta(hours=1), server_now + timedelta(hours=1)) or ()
+    with _MT5_LOCK:
+        deals = _mt5.history_deals_get(day_start_server - timedelta(hours=1), server_now + timedelta(hours=1)) or ()
     closed: dict[int, dict] = {}
     for d in deals:
         if d.magic not in our_magics:
@@ -224,7 +232,8 @@ def _leaderboard_text(client, strategies: list[Strategy]) -> str:
     from datetime import datetime, timedelta, timezone
     server_now = _server_now(client)
     since = server_now - timedelta(days=30)
-    deals = _mt5.history_deals_get(since, server_now + timedelta(hours=1)) or ()
+    with _MT5_LOCK:
+        deals = _mt5.history_deals_get(since, server_now + timedelta(hours=1)) or ()
 
     our_magics = {s.magic: s for s in strategies}
     pos_pnl: dict[int, dict] = {}
