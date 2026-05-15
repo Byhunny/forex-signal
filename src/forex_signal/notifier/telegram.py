@@ -65,7 +65,12 @@ def _get_updates(token: str, offset: int, timeout: int = 25) -> list[dict]:
 
 def _command_loop(token: str, chat_id: str, handlers: dict[str, Callable[[], str]]) -> None:
     """Long-poll for commands. Each handler returns text to send back."""
-    offset = 0
+    # Drain any pending updates at startup — we don't want to replay commands
+    # sent while the bot was offline (e.g., /status sent before restart).
+    initial = _get_updates(token, 0, timeout=0)
+    offset = initial[-1]["update_id"] + 1 if initial else 0
+    if initial:
+        log.info("telegram listener: skipped %d backlog updates (now at offset %d)", len(initial), offset)
     log.info("telegram command listener started — handlers: %s", list(handlers.keys()))
     while True:
         try:
