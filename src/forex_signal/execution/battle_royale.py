@@ -192,9 +192,10 @@ def _status_text(client, strategies: list[Strategy], state: dict) -> str:
             "magic": d.magic,
         }
 
+    # MT5 DEAL_REASON: 0=client, 1=mobile, 2=web, 3=expert, 4=SL, 5=TP, 6=SO, 7=rollover
     wins = sum(1 for c in closed.values() if c["pnl"] > 0)
     losses = sum(1 for c in closed.values() if c["pnl"] <= 0)
-    tp_n = sum(1 for c in closed.values() if c["reason"] == 3)
+    tp_n = sum(1 for c in closed.values() if c["reason"] == 5)
     sl_n = sum(1 for c in closed.values() if c["reason"] == 4)
     other_n = len(closed) - tp_n - sl_n
     pnl_today = sum(c["pnl"] for c in closed.values())
@@ -544,7 +545,7 @@ def run_battle_royale(mode: str = "paper") -> int:
                 import MetaTrader5 as _mt5
                 deals = _mt5.history_deals_get(position=ticket) or ()
                 total_pnl = sum(d.profit + d.swap + d.commission for d in deals)
-                reason_map = {0: "manual", 3: "TP", 4: "SL", 5: "SO", 6: "rollover"}
+                reason_map = {0: "manual", 1: "mobile", 2: "web", 3: "expert", 4: "SL", 5: "TP", 6: "SO", 7: "rollover"}
                 close_deals = [d for d in deals if d.entry != 0]  # entry=1 is OUT
                 reason = reason_map.get(close_deals[0].reason if close_deals else 0, "?")
                 close_price = close_deals[0].price if close_deals else 0.0
