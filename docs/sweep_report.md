@@ -1,6 +1,6 @@
 # Sweep Report (LIVE — updates as sweep progresses)
 
-Last update: 2026-05-14T20:24:29.840425+00:00  ·  Results: **228**  ·  Unique (symbol, TF) combos: **57**
+Last update: 2026-05-15T15:05:05.933684+00:00  ·  Results: **228**  ·  Unique (symbol, TF) combos: **57**
 
 Symbols processed so far: AUDUSD, BTCUSD, EURAUD, EURCAD, EURGBP, EURJPY, EURUSD, GBPUSD, GER40Cash, GOLD, NZDUSD, SILVER, US100Cash, US500Cash, USDCAD, USDCHF, USDCNH, USDJPY, USDSEK
 

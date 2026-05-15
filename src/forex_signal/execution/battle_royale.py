@@ -54,6 +54,9 @@ class Strategy:
     model_path: Path
     magic: int
     entry_cfg: EntryConfig
+    exit_mode: str = "FixedTP"  # FixedTP | CLOSE | HALFTP | TRAIL15 | TRAIL12
+    half_peak_tp_pips: float = 0.0  # used by HALFTP mode
+    pip_value: float = 0.0001       # for HALFTP/trail price conversion
     lot_size: float = 0.01
     max_positions: int = 1
     sl_atr_mult: float = 1.5
@@ -65,8 +68,19 @@ class Strategy:
     predictor: "Predictor | None" = field(default=None, repr=False)
     last_bar_time: "datetime | None" = field(default=None, repr=False)
 
+    @property
+    def trail_atr_mult(self) -> float:
+        if self.exit_mode == "TRAIL12": return 1.2
+        if self.exit_mode == "TRAIL15": return 1.5
+        return 0.0  # not used
 
-# === TOP 20 BATTLE ROYALE CONTENDERS ===
+
+# === TOP 27 PROFITABLE CONTENDERS (from full backtest sweep, realistic spreads) ===
+# Each contender: (Symbol, TF, BaseStrategy, ExitMode, half_peak_tp_pips)
+# Same Symbol+Strategy can appear in multiple modes — each gets unique magic.
+# half_peak_tp_pips = median peak distance / 2 (from peak_distance.json), only used by HALFTP mode.
+
+# Backwards-compat alias (kept for tests / other code)
 # Derived from the sweep of 19 symbols × 3 TFs × 4 strategies (228 backtests).
 # Slots 1-10: profitable in backtest (PF > 1). Slots 11-20: high WR (>=66%) candidates
 # selected for volume + diversity, mostly break-even (PF 0.58-1.41).
@@ -148,6 +162,124 @@ def build_strategies() -> list[Strategy]:
             model_path=PROJECT_ROOT / "models" / model,
             magic=magic,
             entry_cfg=EntryConfig(**ekw),
+        ))
+    return out
+
+
+# === NEW TOP 27 CONTENDER LIST ===
+# (name_suffix, symbol, tf, model_file, magic, entry_kwargs, exit_mode, half_peak_tp_pips)
+TOP_27_CONTENDERS: list[tuple] = [
+    # (name, symbol, tf, model, magic, entry_kwargs, exit_mode, half_tp_pips)
+    # --- EURJPY M15 trend_lnn ---
+    ("01_EURJPY_M15_trend_lnn_HALFTP", "EURJPY", "M15", "sweep_EURJPY_M15.pt", 26052001,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "HALFTP", 260.0),
+    ("02_EURJPY_M15_trend_lnn_CLOSE", "EURJPY", "M15", "sweep_EURJPY_M15.pt", 26052002,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "CLOSE", 0.0),
+    # --- SILVER M15 trend_lnn ---
+    ("03_SILVER_M15_trend_lnn_CLOSE", "SILVER", "M15", "sweep_SILVER_M15.pt", 26052003,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "CLOSE", 0.0),
+    ("05_SILVER_M15_trend_lnn_HALFTP", "SILVER", "M15", "sweep_SILVER_M15.pt", 26052005,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "HALFTP", 1052.0),
+    # --- SILVER M30 trend_lnn ---
+    ("04_SILVER_M30_trend_lnn_CLOSE", "SILVER", "M30", "sweep_SILVER_M30.pt", 26052004,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "CLOSE", 0.0),
+    ("22_SILVER_M30_trend_lnn_HALFTP", "SILVER", "M30", "sweep_SILVER_M30.pt", 26052022,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "HALFTP", 124.0),
+    # --- GOLD M15 trend_lnn ---
+    ("06_GOLD_M15_trend_lnn_HALFTP", "GOLD", "M15", "sweep_GOLD_M15.pt", 26052006,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "HALFTP", 4106.0),
+    ("07_GOLD_M15_trend_lnn_CLOSE", "GOLD", "M15", "sweep_GOLD_M15.pt", 26052007,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "CLOSE", 0.0),
+    ("08_GOLD_M15_trend_lnn_FixedTP", "GOLD", "M15", "sweep_GOLD_M15.pt", 26052008,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "FixedTP", 0.0),
+    # --- SILVER M5 trend_lnn ---
+    ("09_SILVER_M5_trend_lnn_HALFTP", "SILVER", "M5", "sweep_SILVER_M5.pt", 26052009,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "HALFTP", 237.0),
+    ("10_SILVER_M5_trend_lnn_CLOSE", "SILVER", "M5", "sweep_SILVER_M5.pt", 26052010,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "CLOSE", 0.0),
+    # --- EURJPY M30 smc_strict ---
+    ("11_EURJPY_M30_smc_strict_FixedTP", "EURJPY", "M30", "sweep_EURJPY_M30.pt", 26052011,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=True,
+             require_pullback=False, min_lnn_probability=0.55, sweep_recent_window=10), "FixedTP", 0.0),
+    # --- SILVER M15 lnn_strong ---
+    ("12_SILVER_M15_lnn_strong_FixedTP", "SILVER", "M15", "sweep_SILVER_M15.pt", 26052012,
+        dict(require_session_filter=False, require_htf_bias=False, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.60), "FixedTP", 0.0),
+    # --- BTCUSD ---
+    ("13_BTCUSD_M30_trend_lnn_CLOSE", "BTCUSD", "M30", "sweep_BTCUSD_M30.pt", 26052013,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "CLOSE", 0.0),
+    ("14_BTCUSD_M15_trend_lnn_HALFTP", "BTCUSD", "M15", "sweep_BTCUSD_M15.pt", 26052014,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "HALFTP", 1534.0),
+    # --- US100Cash M30 trend_lnn ---
+    ("15_US100Cash_M30_trend_lnn_HALFTP", "US100Cash", "M30", "sweep_US100Cash_M30.pt", 26052015,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "HALFTP", 12666.0),
+    ("16_US100Cash_M30_trend_lnn_CLOSE", "US100Cash", "M30", "sweep_US100Cash_M30.pt", 26052016,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "CLOSE", 0.0),
+    ("27_US100Cash_M30_trend_lnn_FixedTP", "US100Cash", "M30", "sweep_US100Cash_M30.pt", 26052027,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55), "FixedTP", 0.0),
+    # --- AUDUSD M30 smc_strict ---
+    ("17_AUDUSD_M30_smc_strict_HALFTP", "AUDUSD", "M30", "sweep_AUDUSD_M30.pt", 26052017,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=True,
+             require_pullback=False, min_lnn_probability=0.55, sweep_recent_window=10), "HALFTP", 112.0),
+    ("18_AUDUSD_M30_smc_strict_CLOSE", "AUDUSD", "M30", "sweep_AUDUSD_M30.pt", 26052018,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=True,
+             require_pullback=False, min_lnn_probability=0.55, sweep_recent_window=10), "CLOSE", 0.0),
+    # --- EURCAD M30 lnn_strong ---
+    ("19_EURCAD_M30_lnn_strong_CLOSE", "EURCAD", "M30", "sweep_EURCAD_M30.pt", 26052019,
+        dict(require_session_filter=False, require_htf_bias=False, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.60), "CLOSE", 0.0),
+    ("20_EURCAD_M30_lnn_strong_FixedTP", "EURCAD", "M30", "sweep_EURCAD_M30.pt", 26052020,
+        dict(require_session_filter=False, require_htf_bias=False, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.60), "FixedTP", 0.0),
+    ("24_EURCAD_M30_lnn_strong_TRAIL15", "EURCAD", "M30", "sweep_EURCAD_M30.pt", 26052024,
+        dict(require_session_filter=False, require_htf_bias=False, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.60), "TRAIL15", 0.0),
+    # --- EURUSD M30 smc_strict ---
+    ("21_EURUSD_M30_smc_strict_TRAIL15", "EURUSD", "M30", "sweep_EURUSD_M30.pt", 26052021,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=True,
+             require_pullback=False, min_lnn_probability=0.55, sweep_recent_window=10), "TRAIL15", 0.0),
+    ("23_EURUSD_M30_smc_strict_FixedTP", "EURUSD", "M30", "sweep_EURUSD_M30.pt", 26052023,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=True,
+             require_pullback=False, min_lnn_probability=0.55, sweep_recent_window=10), "FixedTP", 0.0),
+    ("25_EURUSD_M30_smc_strict_TRAIL12", "EURUSD", "M30", "sweep_EURUSD_M30.pt", 26052025,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=True,
+             require_pullback=False, min_lnn_probability=0.55, sweep_recent_window=10), "TRAIL12", 0.0),
+    ("26_EURUSD_M30_smc_strict_HALFTP", "EURUSD", "M30", "sweep_EURUSD_M30.pt", 26052026,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=True,
+             require_pullback=False, min_lnn_probability=0.55, sweep_recent_window=10), "HALFTP", 506.0),
+]
+
+
+def build_contenders() -> list[Strategy]:
+    out = []
+    for tup in TOP_27_CONTENDERS:
+        name, sym, tf, model, magic, ekw, mode, half_tp = tup
+        out.append(Strategy(
+            name=name,
+            symbol=sym,
+            timeframe=tf,
+            model_path=PROJECT_ROOT / "models" / model,
+            magic=magic,
+            entry_cfg=EntryConfig(**ekw),
+            exit_mode=mode,
+            half_peak_tp_pips=half_tp,
+            pip_value=PIP_VALUE.get(sym, 0.0001),
         ))
     return out
 
@@ -343,9 +475,10 @@ def _check_and_act(strat: Strategy, client, mode: str, kill_switch: KillSwitchSt
         log.warning("decision failed for %s: %s", strat.name, e)
         return
 
-    # Manage existing positions: close on reversal
+    # Manage existing positions: close on reversal — ONLY for CLOSE-mode contenders.
+    # FixedTP / HALFTP let broker handle exit. TRAIL has its own manager (in main loop).
     my_positions = [p for p in client.get_positions(strat.symbol) if p.get("magic") == strat.magic]
-    if my_positions and decision.direction != 0 and abs(prob - 0.5) >= 0.2:
+    if strat.exit_mode == "CLOSE" and my_positions and decision.direction != 0 and abs(prob - 0.5) >= 0.2:
         for pos in my_positions:
             pos_dir = 1 if str(pos.get("type")).lower().endswith("buy") or pos.get("type") in (0, "buy") else -1
             if pos_dir != decision.direction:
@@ -379,6 +512,16 @@ def _check_and_act(strat: Strategy, client, mode: str, kill_switch: KillSwitchSt
         tp_atr_min_multiplier=strat.tp_atr_min_mult,
         tp_atr_max_multiplier=strat.tp_atr_max_mult,
     )
+
+    # Override TP based on exit_mode
+    if strat.exit_mode == "HALFTP" and strat.half_peak_tp_pips > 0:
+        tp_distance = strat.half_peak_tp_pips * strat.pip_value
+        plan.tp_price = last_close + tp_distance * decision.direction
+        plan.tp_distance = tp_distance
+    elif strat.exit_mode in ("CLOSE", "TRAIL15", "TRAIL12"):
+        # No broker TP — bot manages exit via reversal-close or trailing
+        plan.tp_price = 0.0
+        plan.tp_distance = 0.0
 
     direction_str = "BUY" if decision.direction == 1 else "SELL"
     arrow = "🟢" if decision.direction == 1 else "🔴"
@@ -432,7 +575,8 @@ def run_battle_royale(mode: str = "paper") -> int:
         log.error("MT5 credentials missing — fill .env")
         return 2
 
-    strategies = build_strategies()
+    # Use the new 27-contender lineup (each profitable matrix from full backtest)
+    strategies = build_contenders()
 
     # Load all predictors at startup (one per unique model path)
     cache: dict[str, Predictor] = {}
@@ -533,6 +677,52 @@ def run_battle_royale(mode: str = "paper") -> int:
                     tg_notify(f"🛑 *KILL SWITCH TRIPPED* daily PnL {ks.daily_pnl_pct:+.2f}% — no new trades today")
                     state["kill_notified_for"] = today_now
                     _save_state(state)
+
+            # Trail manager — for TRAIL mode positions, close if price retraced beyond trail
+            import MetaTrader5 as _mt5
+            for s in strategies:
+                if s.exit_mode not in ("TRAIL15", "TRAIL12"):
+                    continue
+                for p in client.get_positions(s.symbol):
+                    if p.get("magic") != s.magic:
+                        continue
+                    ticket = int(p["ticket"])
+                    tick = _mt5.symbol_info_tick(s.symbol)
+                    if tick is None:
+                        continue
+                    pos_dir = 1 if str(p.get("type")).lower().endswith("buy") or p.get("type") in (0, "buy") else -1
+                    current = tick.bid if pos_dir == 1 else tick.ask
+                    meta = tracked_positions.setdefault(ticket, {})
+                    # Initialize peak + trail_distance on first sighting
+                    if "trail_distance" not in meta:
+                        meta.update({"magic": s.magic, "name": s.name, "symbol": s.symbol,
+                                     "direction": pos_dir, "peak": current})
+                        try:
+                            df = client.fetch_history(s.symbol, s.timeframe, 30)
+                            from forex_signal.data.features import compute_features
+                            feats = compute_features(df)
+                            atr = float(feats["atr_14"].iloc[-1])
+                            meta["trail_distance"] = s.trail_atr_mult * atr
+                        except Exception as e:
+                            log.warning("trail init failed for %s: %s", s.name, e)
+                            continue
+                    # Update peak + check trail trigger
+                    if pos_dir == 1:
+                        meta["peak"] = max(meta["peak"], current)
+                        trail_level = meta["peak"] - meta["trail_distance"]
+                        if current <= trail_level:
+                            r = client.close_position(ticket) if mode == "live" else None
+                            _log_decision(s, f"TRAIL_CLOSE ticket={ticket} current={current:.5f} trail_level={trail_level:.5f} peak={meta['peak']:.5f}")
+                            if mode == "live" and r and r.success:
+                                tg_notify(f"📉 *Trail close* `{s.name}` ticket `{ticket}` @ {current:.5f}")
+                    else:
+                        meta["peak"] = min(meta["peak"], current)
+                        trail_level = meta["peak"] + meta["trail_distance"]
+                        if current >= trail_level:
+                            r = client.close_position(ticket) if mode == "live" else None
+                            _log_decision(s, f"TRAIL_CLOSE ticket={ticket} current={current:.5f} trail_level={trail_level:.5f} peak={meta['peak']:.5f}")
+                            if mode == "live" and r and r.success:
+                                tg_notify(f"📈 *Trail close* `{s.name}` ticket `{ticket}` @ {current:.5f}")
 
             # Detect closures (TP/SL/external): a previously-tracked ticket no longer open
             magic_to_strat = {s.magic: s for s in strategies}

@@ -86,16 +86,33 @@ CONTRACT_SIZE = {
     "GER40Cash": 1.0, "US30Cash": 1.0,
 }
 
+# Load LIVE spreads captured from MT5 (run scripts/fetch_spreads.py to refresh).
+# Add a safety buffer for off-peak times where spreads widen.
+def _load_live_spreads():
+    try:
+        live = json.loads((ROOT / "logs" / "live_spreads.json").read_text())
+    except Exception:
+        return {}
+    result = {}
+    for sym, data in live.items():
+        if data and "spread_pips" in data:
+            # Add 20% safety buffer for off-peak conditions
+            result[sym] = round(data["spread_pips"] * 1.2, 1)
+    return result
+
+_LIVE_SPREADS = _load_live_spreads()
+# Fallback if symbol missing from live data
 SPREAD_PIPS = {
-    "EURUSD": 1.0, "GBPUSD": 1.2, "USDJPY": 1.2, "USDCHF": 1.5,
-    "USDCAD": 2.0, "AUDUSD": 1.5, "NZDUSD": 2.0,
-    "EURJPY": 1.5, "EURGBP": 1.3, "EURAUD": 2.0, "EURCAD": 2.5,
-    "USDCNH": 5.0, "USDSEK": 8.0,
-    "GOLD": 25.0, "SILVER": 2.5,
-    "BTCUSD": 30.0,
-    "US500Cash": 1.0, "US100Cash": 2.0,
-    "GER40Cash": 2.0, "US30Cash": 3.0,
+    "EURUSD": 1.5, "GBPUSD": 2.5, "USDJPY": 2.0, "USDCHF": 2.5,
+    "USDCAD": 3.0, "AUDUSD": 2.5, "NZDUSD": 3.0,
+    "EURJPY": 3.0, "EURGBP": 2.5, "EURAUD": 4.0, "EURCAD": 4.0,
+    "USDCNH": 40.0, "USDSEK": 150.0,   # exotics — confirmed wide via live data
+    "GOLD": 6.0, "SILVER": 8.0,
+    "BTCUSD": 60.0,
+    "US500Cash": 2.0, "US100Cash": 30.0,
+    "GER40Cash": 3.0, "US30Cash": 4.0,
 }
+SPREAD_PIPS.update(_LIVE_SPREADS)  # live data wins where available
 
 
 def download_data(client, symbol, timeframe, bars):
@@ -152,7 +169,7 @@ def backtest_one(df, predictor_path, symbol, timeframe, strategy_name, strategy_
         initial_balance=10_000,
         lot_size=0.01,
         spread_pips=spread,
-        slippage_pips=spread * 0.3,
+        slippage_pips=spread * 0.2,
         commission_per_lot=7.0,
         sl_atr_multiplier=1.5,
         tp_atr_min_multiplier=0.6,
@@ -162,6 +179,9 @@ def backtest_one(df, predictor_path, symbol, timeframe, strategy_name, strategy_
         pip_value=pip,
         contract_size=contract,
         entry=entry,
+        spread_min_tp_ratio=2.5,
+        spread_min_sl_ratio=4.0,
+        spread_skip_ratio=0.45,
     )
     return run_backtest(df, predictor, bc)
 
@@ -177,23 +197,22 @@ def main():
         print("MT5 connect failed", flush=True)
         return
 
-    # Resume: load any previously saved partial results so we don't redo backtests
-    results_path = ROOT / "logs" / "sweep_results.json"
+    # SWEEP v2: realistic-spread + spread-aware backtest
+    # JSON-only output (markdown rendered separately by render_sweep_md.py)
+    results_path = ROOT / "logs" / "sweep_results_v2.json"
     results_path.parent.mkdir(exist_ok=True)
     results = []
     done_keys = set()
     if results_path.exists():
         try:
-            with open(results_path) as f:
-                results = json.load(f)
+            results = json.loads(results_path.read_text())
             done_keys = {(r["symbol"], r["timeframe"], r["strategy"]) for r in results}
-            print(f"resuming with {len(results)} previously-saved results, {len(done_keys)} unique keys", flush=True)
+            print(f"resuming with {len(results)} previously-saved results", flush=True)
         except Exception:
             results = []
 
     def _save():
-        with open(results_path, "w") as f:
-            json.dump(results, f, indent=2)
+        results_path.write_text(json.dumps(results, indent=2))
 
     for symbol in SYMBOLS:
         for timeframe in TIMEFRAMES:

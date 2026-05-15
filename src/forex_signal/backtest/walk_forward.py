@@ -37,6 +37,10 @@ class BacktestConfig:
     pip_value: float = PIP_EURUSD
     contract_size: float = 100_000.0
     entry: EntryConfig = field(default_factory=EntryConfig)
+    # Spread-aware TP/SL guards
+    spread_min_tp_ratio: float = 2.5   # TP distance must be >= this × spread (else widen TP)
+    spread_min_sl_ratio: float = 4.0   # SL distance must be >= this × spread (else widen SL)
+    spread_skip_ratio: float = 0.45    # if spread > this × TP_distance, skip the trade entirely
 
 
 @dataclass
@@ -126,8 +130,10 @@ def run_backtest(
                 exit_price = pos["sl"]
                 reason = "sl"
             if exit_price is not None:
+                # Entry price already includes spread+slippage adjustment, so gross
+                # naturally accounts for spread on entry side. Just subtract commission.
                 gross = (exit_price - pos["entry"]) * pos["dir"] * pnl_per_price
-                pnl = gross - 2 * commission - spread_price * pnl_per_price
+                pnl = gross - 2 * commission
                 equity += pnl
                 closed_trades.append(
                     Trade(
@@ -170,7 +176,7 @@ def run_backtest(
         if decision.direction == 0:
             continue
 
-        # Build trade plan
+        # Build trade plan with spread-aware widening
         next_open = close[i]
         entry_price = next_open + (spread_price + slippage_price) * decision.direction
         plan = compute_trade_plan(
@@ -183,6 +189,20 @@ def run_backtest(
             tp_atr_min_multiplier=config.tp_atr_min_multiplier,
             tp_atr_max_multiplier=config.tp_atr_max_multiplier,
         )
+        # Spread guard: widen TP/SL if too close to spread
+        tp_dist = abs(plan.tp_price - entry_price)
+        sl_dist = abs(plan.sl_price - entry_price)
+        if tp_dist < config.spread_min_tp_ratio * spread_price:
+            tp_dist = config.spread_min_tp_ratio * spread_price
+            plan.tp_price = entry_price + tp_dist * decision.direction
+            plan.tp_distance = tp_dist
+        if sl_dist < config.spread_min_sl_ratio * spread_price:
+            sl_dist = config.spread_min_sl_ratio * spread_price
+            plan.sl_price = entry_price - sl_dist * decision.direction
+            plan.sl_distance = sl_dist
+        # Skip if spread is still too big relative to TP (very wide spread environment)
+        if spread_price > tp_dist * config.spread_skip_ratio:
+            continue
         open_positions.append(
             {
                 "entry": entry_price,
@@ -199,7 +219,7 @@ def run_backtest(
     last_close = close[last_i]
     for pos in open_positions:
         gross = (last_close - pos["entry"]) * pos["dir"] * pnl_per_price
-        pnl = gross - 2 * commission - spread_price * pnl_per_price
+        pnl = gross - 2 * commission
         equity += pnl
         closed_trades.append(
             Trade(

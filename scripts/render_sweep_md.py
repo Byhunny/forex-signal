@@ -1,14 +1,24 @@
-"""Render sweep_results.json -> docs/sweep_report.md. Works on partial data
-during an in-progress sweep — re-run any time to refresh."""
+"""Render sweep results JSON -> markdown. Use SWEEP_FILE env var to point to a
+specific results file (defaults to logs/sweep_results_v2.json — the realistic-
+spread sweep). Falls back to sweep_results.json for the original sweep."""
 import json
+import os
 import sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 import pandas as pd
 
-results_path = ROOT / "logs" / "sweep_results.json"
-out_path = ROOT / "docs" / "sweep_report.md"
+env_file = os.getenv("SWEEP_FILE")
+if env_file:
+    results_path = Path(env_file)
+else:
+    v2 = ROOT / "logs" / "sweep_results_v2.json"
+    v1 = ROOT / "logs" / "sweep_results.json"
+    results_path = v2 if v2.exists() else v1
+out_path = ROOT / "docs" / ("sweep_report_v2.md" if "v2" in results_path.name else "sweep_report.md")
+print(f"reading {results_path}")
+print(f"writing {out_path}")
 
 if not results_path.exists():
     sys.exit("no sweep_results.json yet")
