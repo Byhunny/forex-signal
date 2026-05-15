@@ -17,7 +17,7 @@ from forex_signal.config import PROJECT_ROOT, load_config
 from forex_signal.data.features import compute_features
 from forex_signal.data.mt5_client import make_client
 from forex_signal.model.predict import Predictor
-from forex_signal.notifier.telegram import is_configured as telegram_configured, notify as tg_notify
+from forex_signal.notifier.telegram import is_configured as telegram_configured, notify as tg_notify, start_command_listener
 from forex_signal.strategy.entry_engine import EntryConfig, compute_all_signals, evaluate_entry
 from forex_signal.strategy.risk import KillSwitchState, compute_trade_plan
 
@@ -146,6 +146,110 @@ def build_strategies() -> list[Strategy]:
             entry_cfg=EntryConfig(**ekw),
         ))
     return out
+
+
+# === Telegram command handlers ===
+
+def _status_text(client, strategies: list[Strategy], state: dict) -> str:
+    import MetaTrader5 as _mt5
+    from datetime import datetime, timezone
+    info = client.get_account_info()
+    eq = float(info["equity"])
+    day_start = float(state.get("day_start_equity", eq))
+    daily_pct = (eq - day_start) / day_start * 100.0 if day_start else 0.0
+
+    our_magics = {s.magic for s in strategies}
+    open_pos = [p for p in (client.get_positions() or []) if p.get("magic") in our_magics]
+
+    day_start_utc = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    deals = _mt5.history_deals_get(day_start_utc, datetime.now(timezone.utc)) or ()
+    closed: dict[int, dict] = {}
+    for d in deals:
+        if d.magic not in our_magics:
+            continue
+        if d.entry != 1:  # only count "OUT" deals
+            continue
+        closed[d.position_id] = {
+            "pnl": (closed.get(d.position_id, {"pnl": 0})["pnl"] + d.profit + d.swap + d.commission),
+            "reason": d.reason,
+            "magic": d.magic,
+        }
+
+    wins = sum(1 for c in closed.values() if c["pnl"] > 0)
+    losses = sum(1 for c in closed.values() if c["pnl"] <= 0)
+    tp_n = sum(1 for c in closed.values() if c["reason"] == 3)
+    sl_n = sum(1 for c in closed.values() if c["reason"] == 4)
+    other_n = len(closed) - tp_n - sl_n
+    pnl_today = sum(c["pnl"] for c in closed.values())
+    win_rate = (wins / len(closed) * 100) if closed else 0.0
+
+    txt = "📊 *Status*\n"
+    txt += f"Equity: *${eq:.2f}* ({daily_pct:+.2f}%)\n"
+    txt += f"Day baseline: ${day_start:.2f}\n"
+    txt += f"Open positions: *{len(open_pos)}* / {len(strategies)}\n"
+    txt += f"\n*Today closed: {len(closed)}*\n"
+    txt += f"  ✅ {wins}  ❌ {losses}  WR {win_rate:.0f}%\n"
+    txt += f"  🎯 TP: {tp_n}  🛑 SL: {sl_n}  📤 Other: {other_n}\n"
+    txt += f"  P&L: *${pnl_today:+.2f}*"
+
+    if open_pos:
+        txt += "\n\n*Open now:*"
+        for p in open_pos:
+            name = next((s.name for s in strategies if s.magic == p["magic"]), f"magic={p['magic']}")
+            side = "BUY" if str(p.get("type")).lower().endswith("buy") or p.get("type") in (0, "buy") else "SELL"
+            txt += f"\n• `{name[:32]}` {side} {p['symbol']} ${p.get('profit', 0):+.2f}"
+    return txt
+
+
+def _leaderboard_text(client, strategies: list[Strategy]) -> str:
+    import MetaTrader5 as _mt5
+    from datetime import datetime, timedelta, timezone
+    since = datetime.now(timezone.utc) - timedelta(days=30)
+    deals = _mt5.history_deals_get(since, datetime.now(timezone.utc)) or ()
+
+    our_magics = {s.magic: s for s in strategies}
+    pos_pnl: dict[int, dict] = {}
+    for d in deals:
+        if d.magic not in our_magics:
+            continue
+        if d.position_id not in pos_pnl:
+            pos_pnl[d.position_id] = {"magic": d.magic, "pnl": 0.0, "deals": 0}
+        pos_pnl[d.position_id]["pnl"] += d.profit + d.swap + d.commission
+        pos_pnl[d.position_id]["deals"] += 1
+
+    per_magic: dict[int, dict] = {}
+    for pid, p in pos_pnl.items():
+        if p["deals"] < 2:
+            continue  # not yet closed
+        m = p["magic"]
+        per_magic.setdefault(m, {"trades": 0, "wins": 0, "pnl": 0.0})
+        per_magic[m]["trades"] += 1
+        if p["pnl"] > 0:
+            per_magic[m]["wins"] += 1
+        per_magic[m]["pnl"] += p["pnl"]
+
+    rows = []
+    for s in strategies:
+        d = per_magic.get(s.magic, {"trades": 0, "wins": 0, "pnl": 0.0})
+        wr = d["wins"] / d["trades"] * 100 if d["trades"] else 0.0
+        rows.append((s.name, d["trades"], d["wins"], wr, d["pnl"]))
+    rows.sort(key=lambda r: r[4], reverse=True)
+
+    total_pnl = sum(r[4] for r in rows)
+    total_trades = sum(r[1] for r in rows)
+    total_wins = sum(r[2] for r in rows)
+    overall_wr = (total_wins / total_trades * 100) if total_trades else 0.0
+
+    txt = f"🏆 *Leaderboard* (30d)\n"
+    txt += f"Total: {total_trades} trades  WR {overall_wr:.0f}%  P&L *${total_pnl:+.2f}*\n\n"
+    for i, (name, trades, wins, wr, pnl) in enumerate(rows, 1):
+        emoji = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"`{i:2d}`"
+        short = name.replace("_", " ")[:28]
+        if trades == 0:
+            txt += f"{emoji} `{short:28s}` —\n"
+        else:
+            txt += f"{emoji} `{short:28s}` n={trades:3d} WR={wr:3.0f}% ${pnl:+7.2f}\n"
+    return txt
 
 
 def _load_state() -> dict:
@@ -355,8 +459,22 @@ def run_battle_royale(mode: str = "paper") -> int:
             f"Mode: `{mode}`\n"
             f"Contenders: *{len(strategies)}*\n"
             f"Current equity: ${current_eq:.2f}\n"
-            f"Day baseline: ${day_start:.2f} ({daily_pct:+.2f}%)"
+            f"Day baseline: ${day_start:.2f} ({daily_pct:+.2f}%)\n"
+            f"\nCommands: /status /lb /help"
         )
+        # Start command listener — captures client + strategies + state by closure
+        start_command_listener({
+            "/start": lambda: "🎮 Battle Royale running. Commands: /status /lb /help",
+            "/help": lambda: (
+                "*Commands:*\n"
+                "/status — current equity, open positions, today's TP/SL/PnL\n"
+                "/lb — leaderboard (per-strategy stats, 30d window)\n"
+                "/help — this message"
+            ),
+            "/status": lambda: _status_text(client, strategies, state),
+            "/lb": lambda: _leaderboard_text(client, strategies),
+            "/leaderboard": lambda: _leaderboard_text(client, strategies),
+        })
     else:
         log.info("Telegram not configured (set TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID in .env to enable notifications)")
 
