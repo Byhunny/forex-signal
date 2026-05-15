@@ -346,11 +346,16 @@ def run_battle_royale(mode: str = "paper") -> int:
                 }
 
     if telegram_configured():
+        current_info = client.get_account_info()
+        current_eq = float(current_info["equity"])
+        day_start = float(state.get("day_start_equity", current_eq))
+        daily_pct = (current_eq - day_start) / day_start * 100.0 if day_start else 0.0
         tg_notify(
             f"🎮 *Battle Royale started*\n"
             f"Mode: `{mode}`\n"
             f"Contenders: *{len(strategies)}*\n"
-            f"Account equity: ${float(state.get('day_start_equity', 0)):.2f}"
+            f"Current equity: ${current_eq:.2f}\n"
+            f"Day baseline: ${day_start:.2f} ({daily_pct:+.2f}%)"
         )
     else:
         log.info("Telegram not configured (set TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID in .env to enable notifications)")
