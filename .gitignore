@@ -1,15 +1,19 @@
 __pycache__/
 *.pyc
-*.pt
 *.pkl
 .env
 .venv/
 venv/
 data_cache/*.csv
 data_cache/*.parquet
-logs/*.log
+logs/
 .pytest_cache/
 .DS_Store
 *.egg-info/
 build/
 dist/
+
+# Models tracked in git (small enough, needed for fresh deployment)
+# Exception: sweep_*.pt are temp/research artifacts
+models/lnn_*.pt   ! tracked (production models)
+models/sweep_*.json   ! tracked (metrics)

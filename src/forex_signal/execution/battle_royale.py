@@ -62,11 +62,14 @@ class Strategy:
     last_bar_time: "datetime | None" = field(default=None, repr=False)
 
 
-# === TOP 10 BATTLE ROYALE CONTENDERS ===
+# === TOP 20 BATTLE ROYALE CONTENDERS ===
 # Derived from the sweep of 19 symbols × 3 TFs × 4 strategies (228 backtests).
-# Magic numbers: 26051001..26051010 (date-based, unique per strategy slot).
+# Slots 1-10: profitable in backtest (PF > 1). Slots 11-20: high WR (>=66%) candidates
+# selected for volume + diversity, mostly break-even (PF 0.58-1.41).
+# Magic numbers: 26051001..26051020 (date-based, unique per strategy slot).
 TOP_10_STRATEGIES = [
     # (name, symbol, tf, model, magic, entry_kwargs)
+    # --- TIER 1: BACKTEST-PROFITABLE (PF > 1) ---
     ("01_USDSEK_M30_lnn_very_strong", "USDSEK", "M30", "sweep_USDSEK_M30.pt", 26051001,
         dict(require_session_filter=False, require_htf_bias=False, require_sweep=False,
              require_pullback=False, min_lnn_probability=0.65)),
@@ -95,6 +98,37 @@ TOP_10_STRATEGIES = [
         dict(require_session_filter=False, require_htf_bias=False, require_sweep=False,
              require_pullback=False, min_lnn_probability=0.60)),
     ("10_US100Cash_M30_trend_lnn", "US100Cash", "M30", "sweep_US100Cash_M30.pt", 26051010,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55)),
+    # --- TIER 2: HIGH WR + VOLUME PICKS (break-even to slightly losing in backtest) ---
+    ("11_USDSEK_M5_lnn_very_strong", "USDSEK", "M5", "sweep_USDSEK_M5.pt", 26051011,
+        dict(require_session_filter=False, require_htf_bias=False, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.65)),
+    ("12_USDSEK_M30_trend_lnn", "USDSEK", "M30", "sweep_USDSEK_M30.pt", 26051012,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55)),
+    ("13_USDSEK_M5_lnn_strong", "USDSEK", "M5", "sweep_USDSEK_M5.pt", 26051013,
+        dict(require_session_filter=False, require_htf_bias=False, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.60)),
+    ("14_SILVER_M5_trend_lnn", "SILVER", "M5", "sweep_SILVER_M5.pt", 26051014,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55)),
+    ("15_SILVER_M30_trend_lnn", "SILVER", "M30", "sweep_SILVER_M30.pt", 26051015,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55)),
+    ("16_EURJPY_M15_trend_lnn", "EURJPY", "M15", "sweep_EURJPY_M15.pt", 26051016,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55)),
+    ("17_BTCUSD_M30_trend_lnn", "BTCUSD", "M30", "sweep_BTCUSD_M30.pt", 26051017,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55)),
+    ("18_BTCUSD_M15_trend_lnn", "BTCUSD", "M15", "sweep_BTCUSD_M15.pt", 26051018,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55)),
+    ("19_GOLD_M15_trend_lnn", "GOLD", "M15", "sweep_GOLD_M15.pt", 26051019,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55)),
+    ("20_USDSEK_M15_trend_lnn", "USDSEK", "M15", "sweep_USDSEK_M15.pt", 26051020,
         dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
              require_pullback=False, min_lnn_probability=0.55)),
 ]
@@ -146,7 +180,7 @@ def _tf_aligned(tf: str, now: datetime) -> bool:
 def _log_decision(strat: Strategy, decision_str: str) -> None:
     DECISIONS_LOG.parent.mkdir(parents=True, exist_ok=True)
     ts = datetime.now(timezone.utc).isoformat()
-    with open(DECISIONS_LOG, "a") as f:
+    with open(DECISIONS_LOG, "a", encoding="utf-8") as f:
         f.write(f"{ts}  {strat.name}  {decision_str}\n")
 
 
@@ -245,6 +279,13 @@ def _check_and_act(strat: Strategy, client, mode: str, kill_switch: KillSwitchSt
 
 
 def run_battle_royale(mode: str = "paper") -> int:
+    # Force UTF-8 stdout on Windows (cp1254 can't encode em dash / arrows)
+    import sys as _sys
+    try:
+        _sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        _sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s :: %(message)s",
