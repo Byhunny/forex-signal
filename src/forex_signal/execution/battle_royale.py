@@ -261,6 +261,11 @@ def _check_and_act(strat: Strategy, client, mode: str, kill_switch: KillSwitchSt
             comment=strat.name[:31],  # MT5 comment max ~32 chars
         )
         _log_decision(strat, f"OPEN {direction_str} prob={prob:.3f} sl={plan.sl_price:.5f} tp={plan.tp_price:.5f} ok={r.success} ticket={r.ticket} err={r.error}")
+        if r.success and r.ticket:
+            # Track for closure detection
+            tracked_positions = getattr(_check_and_act, "_tracked", None)
+            # Note: actual tracking happens in main loop on next tick when we re-query positions
+            pass
         if r.success:
             tg_notify(
                 f"{arrow} *{direction_str}* `{strat.symbol}` @ {last_close:.5f}\n"
@@ -327,6 +332,19 @@ def run_battle_royale(mode: str = "paper") -> int:
     for s in strategies:
         log.info("  contender: %s (magic=%d)", s.name, s.magic)
 
+    # Track open positions across ticks so we can detect broker-side closures (TP/SL)
+    # Maps ticket -> (magic, symbol, open_price, direction)
+    tracked_positions: dict[int, dict] = {}
+    # Seed from any currently-open positions
+    for s in strategies:
+        for p in client.get_positions(s.symbol):
+            if p.get("magic") == s.magic:
+                tracked_positions[int(p["ticket"])] = {
+                    "magic": s.magic, "name": s.name, "symbol": s.symbol,
+                    "open_price": float(p.get("price_open", 0.0)),
+                    "type": p.get("type"),
+                }
+
     if telegram_configured():
         tg_notify(
             f"🎮 *Battle Royale started*\n"
@@ -365,7 +383,50 @@ def run_battle_royale(mode: str = "paper") -> int:
                     state["kill_notified_for"] = today_now
                     _save_state(state)
 
-            n_open = sum(1 for s in strategies for _ in client.get_positions(s.symbol) if _.get("magic") == s.magic)
+            # Detect closures (TP/SL/external): a previously-tracked ticket no longer open
+            magic_to_strat = {s.magic: s for s in strategies}
+            current_tickets: set[int] = set()
+            for s in strategies:
+                for p in client.get_positions(s.symbol):
+                    if p.get("magic") == s.magic:
+                        current_tickets.add(int(p["ticket"]))
+                        if int(p["ticket"]) not in tracked_positions:
+                            tracked_positions[int(p["ticket"])] = {
+                                "magic": s.magic, "name": s.name, "symbol": s.symbol,
+                                "open_price": float(p.get("price_open", 0.0)),
+                                "type": p.get("type"),
+                            }
+            closed_tickets = set(tracked_positions.keys()) - current_tickets
+            for ticket in closed_tickets:
+                info_pos = tracked_positions.pop(ticket)
+                # Look up the closing deal to determine reason and P&L
+                import MetaTrader5 as _mt5
+                from datetime import timedelta as _td
+                deals = _mt5.history_deals_get(position=ticket) or ()
+                if not deals:
+                    # broker history sometimes lags — try by date range
+                    deals = _mt5.history_deals_get(
+                        now - _td(hours=12), now + _td(minutes=1)
+                    ) or ()
+                    deals = [d for d in deals if d.position_id == ticket]
+                total_pnl = sum(d.profit + d.swap + d.commission for d in deals)
+                reason_map = {0: "manual", 3: "TP", 4: "SL", 5: "SO", 6: "rollover"}
+                close_deals = [d for d in deals if d.entry != 0]  # entry=1 is OUT
+                reason = reason_map.get(close_deals[0].reason if close_deals else 0, "?")
+                close_price = close_deals[0].price if close_deals else 0.0
+                strat_name = info_pos.get("name", f"magic={info_pos['magic']}")
+                emoji = "✅" if total_pnl > 0 else "❌"
+                _log_decision(
+                    magic_to_strat.get(info_pos["magic"], strategies[0]),
+                    f"CLOSED ticket={ticket} reason={reason} price={close_price:.5f} pnl={total_pnl:+.2f}",
+                )
+                tg_notify(
+                    f"{emoji} *Closed* `{strat_name}` ({reason})\n"
+                    f"Symbol: `{info_pos['symbol']}`  Ticket: `{ticket}`\n"
+                    f"P&L: *${total_pnl:+.2f}*"
+                )
+
+            n_open = len(current_tickets)
             log.info("tick %s UTC | equity=$%.2f | daily=%+.2f%% | open_positions=%d",
                      now.strftime("%H:%M"), info["equity"], ks.daily_pnl_pct, n_open)
 
