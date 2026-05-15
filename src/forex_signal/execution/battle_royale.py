@@ -150,9 +150,19 @@ def build_strategies() -> list[Strategy]:
 
 # === Telegram command handlers ===
 
-def _status_text(client, strategies: list[Strategy], state: dict) -> str:
+def _server_now(client) -> "datetime":
+    """Get broker's wall-clock time via latest tick — broker can be in different TZ than UTC."""
     import MetaTrader5 as _mt5
     from datetime import datetime, timezone
+    tick = _mt5.symbol_info_tick("EURUSD")
+    if tick and tick.time:
+        return datetime.fromtimestamp(tick.time, tz=timezone.utc)
+    return datetime.now(timezone.utc)
+
+
+def _status_text(client, strategies: list[Strategy], state: dict) -> str:
+    import MetaTrader5 as _mt5
+    from datetime import datetime, timedelta, timezone
     info = client.get_account_info()
     eq = float(info["equity"])
     day_start = float(state.get("day_start_equity", eq))
@@ -161,16 +171,23 @@ def _status_text(client, strategies: list[Strategy], state: dict) -> str:
     our_magics = {s.magic for s in strategies}
     open_pos = [p for p in (client.get_positions() or []) if p.get("magic") in our_magics]
 
-    day_start_utc = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    deals = _mt5.history_deals_get(day_start_utc, datetime.now(timezone.utc)) or ()
+    # Use SERVER time for the window — broker can be in UTC+N
+    server_now = _server_now(client)
+    day_start_server = server_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Pad on both sides for safety
+    deals = _mt5.history_deals_get(day_start_server - timedelta(hours=1), server_now + timedelta(hours=1)) or ()
     closed: dict[int, dict] = {}
     for d in deals:
         if d.magic not in our_magics:
             continue
         if d.entry != 1:  # only count "OUT" deals
             continue
+        # Filter to today server-time
+        if datetime.fromtimestamp(d.time, tz=timezone.utc) < day_start_server:
+            continue
+        prev = closed.get(d.position_id, {"pnl": 0.0})
         closed[d.position_id] = {
-            "pnl": (closed.get(d.position_id, {"pnl": 0})["pnl"] + d.profit + d.swap + d.commission),
+            "pnl": prev["pnl"] + d.profit + d.swap + d.commission,
             "reason": d.reason,
             "magic": d.magic,
         }
@@ -204,8 +221,9 @@ def _status_text(client, strategies: list[Strategy], state: dict) -> str:
 def _leaderboard_text(client, strategies: list[Strategy]) -> str:
     import MetaTrader5 as _mt5
     from datetime import datetime, timedelta, timezone
-    since = datetime.now(timezone.utc) - timedelta(days=30)
-    deals = _mt5.history_deals_get(since, datetime.now(timezone.utc)) or ()
+    server_now = _server_now(client)
+    since = server_now - timedelta(days=30)
+    deals = _mt5.history_deals_get(since, server_now + timedelta(hours=1)) or ()
 
     our_magics = {s.magic: s for s in strategies}
     pos_pnl: dict[int, dict] = {}
@@ -522,16 +540,9 @@ def run_battle_royale(mode: str = "paper") -> int:
             closed_tickets = set(tracked_positions.keys()) - current_tickets
             for ticket in closed_tickets:
                 info_pos = tracked_positions.pop(ticket)
-                # Look up the closing deal to determine reason and P&L
+                # Use the most reliable lookup: by position_id (broker time-zone agnostic)
                 import MetaTrader5 as _mt5
-                from datetime import timedelta as _td
                 deals = _mt5.history_deals_get(position=ticket) or ()
-                if not deals:
-                    # broker history sometimes lags — try by date range
-                    deals = _mt5.history_deals_get(
-                        now - _td(hours=12), now + _td(minutes=1)
-                    ) or ()
-                    deals = [d for d in deals if d.position_id == ticket]
                 total_pnl = sum(d.profit + d.swap + d.commission for d in deals)
                 reason_map = {0: "manual", 3: "TP", 4: "SL", 5: "SO", 6: "rollover"}
                 close_deals = [d for d in deals if d.entry != 0]  # entry=1 is OUT
