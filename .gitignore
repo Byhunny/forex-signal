@@ -13,7 +13,4 @@ logs/
 build/
 dist/
 
-# Models tracked in git (small enough, needed for fresh deployment)
-# Exception: sweep_*.pt are temp/research artifacts
-models/lnn_*.pt   ! tracked (production models)
-models/sweep_*.json   ! tracked (metrics)
+# NOTE: models/*.pt are tracked in git (8MB total, needed for deployment)
