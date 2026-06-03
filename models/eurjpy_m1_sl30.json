@@ -1,0 +1,52 @@
+{
+  "best_val_loss": 1.0041287422180176,
+  "test_loss": 1.014206302165985,
+  "test_directional_accuracy": 0.5309663641217298,
+  "test_classifier_accuracy": 0.5317672183662573,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 5,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.6919703984606094,
+      "val_loss": 1.0041287422180176,
+      "train_mse": 1.0015440488207168,
+      "train_bce": 0.6904263530952343,
+      "secs": 2.101008176803589
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6823180067366448,
+      "val_loss": 1.0041430234909057,
+      "train_mse": 0.9933520814646846,
+      "train_bce": 0.688965928727302,
+      "secs": 2.190962553024292
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6821887890497844,
+      "val_loss": 1.004592498143514,
+      "train_mse": 0.9934846184391907,
+      "train_bce": 0.688704176225524,
+      "secs": 2.313992738723755
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6844835454139158,
+      "val_loss": 1.0042960087458292,
+      "train_mse": 0.9961268716100333,
+      "train_bce": 0.6883566759634709,
+      "secs": 2.2997450828552246
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6709086359411045,
+      "val_loss": 1.0067133784294129,
+      "train_mse": 0.9830365137777467,
+      "train_bce": 0.6878721212995225,
+      "secs": 2.2139601707458496
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\eurjpy_m1_sl30.pt"
+}

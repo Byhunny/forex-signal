@@ -1,0 +1,60 @@
+{
+  "best_val_loss": 1.0149395995669894,
+  "test_loss": 1.0268136064211528,
+  "test_directional_accuracy": 0.5203215721304154,
+  "test_classifier_accuracy": 0.5180884323358642,
+  "test_classifier_p70_acc": 0.0,
+  "test_classifier_p70_count": 0,
+  "epochs_run": 6,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.7115118474495121,
+      "val_loss": 1.0149395995669894,
+      "train_mse": 1.0174672690833486,
+      "train_bce": 0.6940445783661633,
+      "secs": 1.6918189525604248
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6911425881269502,
+      "val_loss": 1.0159208575884502,
+      "train_mse": 0.9997810619633373,
+      "train_bce": 0.6913615276173848,
+      "secs": 1.8308780193328857
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.6854871482383915,
+      "val_loss": 1.0184521211518183,
+      "train_mse": 0.9951903383906294,
+      "train_bce": 0.6902968200241647,
+      "secs": 1.7111294269561768
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.6768762076773294,
+      "val_loss": 1.0208681027094524,
+      "train_mse": 0.9879321906624771,
+      "train_bce": 0.6889440155610805,
+      "secs": 1.7226178646087646
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.6669441810468348,
+      "val_loss": 1.025842759344313,
+      "train_mse": 0.980124938778761,
+      "train_bce": 0.686819256805792,
+      "secs": 1.7577438354492188
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.6497383146751217,
+      "val_loss": 1.028525087568495,
+      "train_mse": 0.9663211616074167,
+      "train_bce": 0.6834171457988459,
+      "secs": 1.663942575454712
+    }
+  ],
+  "model_path": "C:\\Users\\usnat\\projects\\forex-signal\\models\\gold_m5_lnn_sl50.pt"
+}

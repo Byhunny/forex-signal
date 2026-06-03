@@ -54,7 +54,7 @@ class Strategy:
     model_path: Path
     magic: int
     entry_cfg: EntryConfig
-    exit_mode: str = "FixedTP"  # FixedTP | CLOSE | HALFTP | TRAIL15 | TRAIL12
+    exit_mode: str = "FixedTP"  # FixedTP | CLOSE | HALFTP | TRAIL15 | TRAIL12 | T2_TIMEEXIT
     half_peak_tp_pips: float = 0.0  # used by HALFTP mode
     pip_value: float = 0.0001       # for HALFTP/trail price conversion
     lot_size: float = 0.01
@@ -63,6 +63,11 @@ class Strategy:
     tp_atr_min_mult: float = 0.6
     tp_atr_max_mult: float = 1.5
     seq_len: int = 50
+    # T2_TIMEEXIT mode: force-close after N bars of position TF
+    max_hold_bars: int = 0
+    # Entry vol filter — only enter if current bar |close-open| >= mult × spread_price
+    vol_filter_mult: float = 0.0
+    spread_pips_estimate: float = 5.0  # used by vol filter to derive spread_price
 
     # Runtime
     predictor: "Predictor | None" = field(default=None, repr=False)
@@ -166,8 +171,28 @@ def build_strategies() -> list[Strategy]:
     return out
 
 
-# === NEW TOP 27 CONTENDER LIST ===
-# (name_suffix, symbol, tf, model_file, magic, entry_kwargs, exit_mode, half_peak_tp_pips)
+# === M5-ONLY CONTENDERS (user request: only M5 + new GOLD M5 scalper) ===
+TOP_M5_CONTENDERS: list[tuple] = [
+    # (name, symbol, tf, model, magic, entry_kwargs, exit_mode, half_tp_pips, max_hold_bars, vol_filter_mult, spread_pips)
+    # 1) New GOLD M5 LNN sl=50 T2 winner (PF 1.26, +$44.10, 10-min hold, vol filter)
+    ("28_GOLD_M5_LNN_sl50_T2_vol1", "GOLD", "M5", "gold_m5_lnn_sl50.pt", 26052028,
+        dict(require_session_filter=False, require_htf_bias=False, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55),
+        "T2_TIMEEXIT", 0.0, 2, 1.0, 6.76),
+    # 2) Existing SILVER M5 HALFTP (slot 09 from original 27)
+    ("09_SILVER_M5_trend_lnn_HALFTP", "SILVER", "M5", "sweep_SILVER_M5.pt", 26052009,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55),
+        "HALFTP", 237.0, 0, 0.0, 8.0),
+    # 3) Existing SILVER M5 CLOSE (slot 10 from original 27)
+    ("10_SILVER_M5_trend_lnn_CLOSE", "SILVER", "M5", "sweep_SILVER_M5.pt", 26052010,
+        dict(require_session_filter=False, require_htf_bias=True, require_sweep=False,
+             require_pullback=False, min_lnn_probability=0.55),
+        "CLOSE", 0.0, 0, 0.0, 8.0),
+]
+
+
+# === ORIGINAL TOP 27 (kept for reference) ===
 TOP_27_CONTENDERS: list[tuple] = [
     # (name, symbol, tf, model, magic, entry_kwargs, exit_mode, half_tp_pips)
     # --- EURJPY M15 trend_lnn ---
@@ -267,6 +292,29 @@ TOP_27_CONTENDERS: list[tuple] = [
 
 
 def build_contenders() -> list[Strategy]:
+    """Build M5-only contenders (current production setup)."""
+    out = []
+    for tup in TOP_M5_CONTENDERS:
+        name, sym, tf, model, magic, ekw, mode, half_tp, max_hold, vol_mult, spread_p = tup
+        out.append(Strategy(
+            name=name,
+            symbol=sym,
+            timeframe=tf,
+            model_path=PROJECT_ROOT / "models" / model,
+            magic=magic,
+            entry_cfg=EntryConfig(**ekw),
+            exit_mode=mode,
+            half_peak_tp_pips=half_tp,
+            pip_value=PIP_VALUE.get(sym, 0.0001),
+            max_hold_bars=max_hold,
+            vol_filter_mult=vol_mult,
+            spread_pips_estimate=spread_p,
+        ))
+    return out
+
+
+def build_contenders_full() -> list[Strategy]:
+    """Legacy: build all 27 (kept for reference)."""
     out = []
     for tup in TOP_27_CONTENDERS:
         name, sym, tf, model, magic, ekw, mode, half_tp = tup
@@ -513,13 +561,26 @@ def _check_and_act(strat: Strategy, client, mode: str, kill_switch: KillSwitchSt
         tp_atr_max_multiplier=strat.tp_atr_max_mult,
     )
 
+    # Vol filter: only enter when current bar move >= mult × spread
+    if strat.vol_filter_mult > 0:
+        try:
+            features_check = compute_features(df)
+            last_co = float(features_check["co_range"].iloc[-1])
+            last_close_p = float(features_check["close"].iloc[-1])
+            bar_move = abs(last_co * last_close_p)
+            spread_price_estimate = strat.spread_pips_estimate * strat.pip_value
+            if bar_move < strat.vol_filter_mult * spread_price_estimate:
+                return  # bar too quiet for this scalper
+        except Exception:
+            pass
+
     # Override TP based on exit_mode
     if strat.exit_mode == "HALFTP" and strat.half_peak_tp_pips > 0:
         tp_distance = strat.half_peak_tp_pips * strat.pip_value
         plan.tp_price = last_close + tp_distance * decision.direction
         plan.tp_distance = tp_distance
-    elif strat.exit_mode in ("CLOSE", "TRAIL15", "TRAIL12"):
-        # No broker TP — bot manages exit via reversal-close or trailing
+    elif strat.exit_mode in ("CLOSE", "TRAIL15", "TRAIL12", "T2_TIMEEXIT"):
+        # No broker TP — bot manages exit via reversal-close, trailing, or time-out
         plan.tp_price = 0.0
         plan.tp_distance = 0.0
 
@@ -677,6 +738,27 @@ def run_battle_royale(mode: str = "paper") -> int:
                     tg_notify(f"🛑 *KILL SWITCH TRIPPED* daily PnL {ks.daily_pnl_pct:+.2f}% — no new trades today")
                     state["kill_notified_for"] = today_now
                     _save_state(state)
+
+            # T2_TIMEEXIT manager — force-close after N bars of TF have elapsed since open
+            for s in strategies:
+                if s.max_hold_bars <= 0:
+                    continue
+                tf_sec = TIMEFRAME_SECONDS.get(s.timeframe, 300)
+                max_age_sec = s.max_hold_bars * tf_sec
+                for p in client.get_positions(s.symbol):
+                    if p.get("magic") != s.magic:
+                        continue
+                    open_time = float(p.get("time", 0))
+                    if open_time <= 0:
+                        continue
+                    age_sec = time.time() - open_time
+                    if age_sec >= max_age_sec:
+                        ticket = int(p["ticket"])
+                        if mode == "live":
+                            r = client.close_position(ticket)
+                            _log_decision(s, f"TIMEEXIT_CLOSE ticket={ticket} age_sec={age_sec:.0f} max={max_age_sec:.0f} ok={r.success}")
+                            if r.success:
+                                tg_notify(f"⏱️ *Time exit* `{s.name}` ticket `{ticket}` ({age_sec/60:.1f} min)")
 
             # Trail manager — for TRAIL mode positions, close if price retraced beyond trail
             import MetaTrader5 as _mt5
